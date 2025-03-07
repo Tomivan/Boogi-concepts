@@ -1,0 +1,15 @@
+.login-form {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+sub {
+    text-align: right;
+    margin-top: 1%;
+}
+.signup{
+    display: flex;
+}
