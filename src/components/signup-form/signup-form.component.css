@@ -39,9 +39,11 @@ button {
 }
 .logo-purple{
     color: #4b0082;
-    font-size: 36px;
 }
 .logo-gold {
     color: #ffd700;
+}
+.logo {
+    font-family: 'Playfair Display';
     font-size: 36px;
 }

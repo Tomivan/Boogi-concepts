@@ -1,0 +1,20 @@
+.navbar{
+    display: flex;
+    justify-content: space-between;
+    height: 5vh;
+}
+ul {
+    display: flex;
+    list-style-type: none;
+}
+li {
+    padding-right: 1em;
+    color: #4b0082;
+}
+.login-link {
+    text-decoration: none;
+    color: #4b0082;
+}
+.link {
+    text-decoration: none;
+}
