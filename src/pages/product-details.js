@@ -4,7 +4,7 @@ import ProductDetails from '../components/product-details/product-details.compon
 
 const ProductDetailsPage = () => {
     return(
-        <div>
+        <div className='component'>
             <Navbar />
             <ProductDetails />
         </div>

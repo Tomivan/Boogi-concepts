@@ -1,0 +1,52 @@
+.empty {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+.cart {
+    height: 10vh;
+}
+.perfume-in-cart {
+    margin-top: 3%;
+}
+.top, .bottom {
+    display: flex;
+    justify-content: space-between;
+}
+.cart-left, .remove, .counter {
+    display: flex;
+}
+.cart-perfume {
+    height: 20vh;
+}
+.left-detail {
+    padding-left: 1em;
+}
+.bottom {
+    margin-top: 3%;
+}
+.trash {
+    color: #4b0082;
+    margin-right: 10%;
+    padding-top: .2em;
+}
+.remove p {
+    color: #4b0082;
+}
+.minus, .plus {
+    background: #4b0082;
+    color: #fff;
+    padding: .5em;
+    border-radius: 5px;
+}
+.counter p {
+    padding: 0 1em;
+}
+.total {
+    text-align: right;
+}
+.checkout {
+    width: 12vw;
+}

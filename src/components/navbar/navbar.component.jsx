@@ -10,7 +10,7 @@ const Navbar = () => {
                 <span className='logo-gold'>NOIR</span>
             </div>
             <ul>
-                <Link to='' className='link'><li>Home</li></Link>
+                <Link to='/' className='link'><li>Home</li></Link>
                 <Link to='/men' className='link'><li>Men</li></Link>
                 <Link to='/women' className='link'><li>Women</li></Link>
                 <Link to='/cart' className='link'><li>Cart</li></Link>

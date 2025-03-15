@@ -8,7 +8,8 @@ import Home from "./home-page";
 import Men from "./men";
 import Women from "./women";
 import ProductDetailsPage from "./product-details";
-import Cart from "../components/cart/cart.component";
+import ShoppingCart from "./shopping-cart";
+import Checkout from "./checkout-page";
 
 const Pages = () => {
     return(
@@ -22,7 +23,8 @@ const Pages = () => {
                 <Route path='/men' element={<Men />} />
                 <Route path='/women' element={<Women />} />
                 <Route path='/product-details' element={<ProductDetailsPage />} />
-                <Route path='/cart' element={<Cart />} />
+                <Route path='/cart' element={<ShoppingCart />} />
+                <Route path='/checkout' element={<Checkout />} />
             </Routes>
         </Router>
     )

@@ -21,10 +21,10 @@ input {
 }
 button {
     border: none;
-    border-radius: 8px;
+    border-radius: 8px !important;
     height: 7vh;
     width: 100%;
-    padding: 1em;
+    padding: .5em;
     background: #4b0082;
     color: #ffffff;
     margin-top: 5%;

@@ -6,11 +6,13 @@ import ProductGrid from '../components/product-grid/product-grid.component';
 
 const Men = () => {
     return(
-        <div className='men'>
+        <div className='component'>
             <Navbar />
             <Search />
-            <Brand />
-            <ProductGrid />
+            <div className='flex'>
+                <Brand />
+                <ProductGrid />
+            </div>
         </div>
     )
 }
