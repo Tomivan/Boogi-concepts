@@ -10,6 +10,8 @@ import Women from "./women";
 import ProductDetailsPage from "./product-details";
 import ShoppingCart from "./shopping-cart";
 import Checkout from "./checkout-page";
+import OrderCompleted from "./completed";
+import MyOrders from "./my-orders";
 
 const Pages = () => {
     return(
@@ -25,6 +27,8 @@ const Pages = () => {
                 <Route path='/product-details' element={<ProductDetailsPage />} />
                 <Route path='/cart' element={<ShoppingCart />} />
                 <Route path='/checkout' element={<Checkout />} />
+                <Route path='/order-completed' element={<OrderCompleted />} />
+                <Route path='/my-orders' element={<MyOrders />} />
             </Routes>
         </Router>
     )

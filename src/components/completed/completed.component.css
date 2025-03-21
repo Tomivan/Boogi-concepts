@@ -1,0 +1,10 @@
+.completed{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.item{
+    display: flex;
+    margin-bottom: 5%;
+}

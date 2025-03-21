@@ -1,0 +1,15 @@
+.order{
+    display: flex;
+    justify-content: space-between;
+    padding: 1em;
+    border: 1px solid #0000001e;
+}
+.order .item {
+    margin-bottom: 0;
+}
+.react-tabs__tab--selected {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid #000;
+}

@@ -1,8 +1,11 @@
 import React from 'react';
+import Delivery from '../components/delivery/delivery.component';
 
 const Checkout = () => {
     return(
-        <div></div>
+        <div>
+            <Delivery />
+        </div>
     )
 }
 
