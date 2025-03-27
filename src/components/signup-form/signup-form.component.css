@@ -27,15 +27,16 @@ button {
     padding: .5em;
     background: #4b0082;
     color: #ffffff;
-    margin-top: 5%;
+    margin-top: 5% !important;
 }
 .login {
     display: flex;
+    margin-top: 5%;
 }
 .purple {
     color: #4b0082;
     text-decoration: none;
-    margin: 5% 0 0 3%;
+    margin-left: 3%;
 }
 .logo-purple{
     color: #4b0082;

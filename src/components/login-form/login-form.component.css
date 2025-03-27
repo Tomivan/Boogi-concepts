@@ -8,8 +8,19 @@
 }
 sub {
     text-align: right;
-    margin-top: 1%;
+    margin-top: 3%;
 }
 .signup{
     display: flex;
+    margin-top: 10%;
+}
+.error-message {
+    color: #ff4444;
+    font-size: 14px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+.login-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
