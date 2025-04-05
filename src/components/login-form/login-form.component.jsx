@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebase';
+import { showErrorAlert, showSuccessAlert, showLoadingAlert, closeAlert } from '../../utils/alert';
 import './login-form.component.css';
 
 const LoginForm = () => {
@@ -14,14 +15,16 @@ const LoginForm = () => {
     const handleLogin = async(e) => {
         e.preventDefault();
         setError('');
-        setLoading(true)
+        showLoadingAlert('Signing in...');
 
         try {
             await signInWithEmailAndPassword(auth, email, password)
+            closeAlert();
+            showSuccessAlert('Welcome back!', 'You have successfully logged in');
             navigate("/")
         } catch(err) {
-            setError(getErrorMessage(err.code));
-            console.log(err)
+            closeAlert();
+            showErrorAlert('Login Failed', getErrorMessage(error.code));
         } finally {
             setLoading(false)
         }

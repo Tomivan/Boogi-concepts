@@ -1,5 +1,4 @@
-import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Signup from "./signup";
 import ForgotPassword from "./forgot-password";
 import Login from "./login";
@@ -12,26 +11,44 @@ import ShoppingCart from "./shopping-cart";
 import Checkout from "./checkout-page";
 import OrderCompleted from "./completed";
 import MyOrders from "./my-orders";
+import ProtectedRoute from "../components/ProtectedRoute";
+import { useAuth } from "../context/AuthContext";
 
 const Pages = () => {
-    return(
-        <Router>
-            <Routes>
-                <Route path='' element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path='/signup' element={<Signup />} />
-                <Route path='/forgot-password' element={<ForgotPassword />} />
-                <Route path='/reset-password' element={<ResetPassword />} />
-                <Route path='/men' element={<Men />} />
-                <Route path='/women' element={<Women />} />
-                <Route path='/product-details' element={<ProductDetailsPage />} />
-                <Route path='/cart' element={<ShoppingCart />} />
-                <Route path='/checkout' element={<Checkout />} />
-                <Route path='/order-completed' element={<OrderCompleted />} />
-                <Route path='/my-orders' element={<MyOrders />} />
-            </Routes>
-        </Router>
-    )
-}
+  const { currentUser } = useAuth();
+
+  return (
+    <Routes>
+      <Route path="/login" element={currentUser ? <Home /> : <Login />} />
+      <Route path="/signup" element={currentUser ? <Home /> : <Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      
+      <Route path="/" element={<Home />} />
+      <Route path="/men" element={<Men />} />
+      <Route path="/women" element={<Women />} />
+      <Route path="/product-details" element={<ProductDetailsPage />} />
+      <Route path="/cart" element={<ShoppingCart />} />
+      
+      <Route path="/checkout" element={
+        <ProtectedRoute>
+          <Checkout />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/order-completed" element={
+        <ProtectedRoute>
+          <OrderCompleted />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/my-orders" element={
+        <ProtectedRoute>
+          <MyOrders />
+        </ProtectedRoute>
+      } />
+    </Routes>
+  );
+};
 
 export default Pages;

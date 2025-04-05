@@ -1,25 +1,32 @@
-import './App.css';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { auth } from './firebase';
+import { AuthProvider } from './context/AuthContext';
+import { onAuthStateChanged } from 'firebase/auth';
+import { CartProvider } from './context/CartContext';
 import Pages from './pages';
 import 'bootstrap/dist/css/bootstrap.css';
 import 'bootstrap/dist/js/bootstrap.js';
-import { onAuthStateChanged } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
-import { auth } from './firebase';
+import './App.css';
 
 function App() {
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    onAuthStateChanged(auth, (user) => {
-      if(user) {
-        navigate("/")
-      }
-    })
-  })
+    const unsubscribe = onAuthStateChanged(auth, () => {
+      setLoading(false);
+    });
+    return unsubscribe; // Cleanup subscription
+  }, []);
+
+  if (loading) return <div className="loading-screen">Loading...</div>;
 
   return (
     <div className="App">
-      <Pages />
+      <AuthProvider>
+        <CartProvider>
+          <Pages />
+        </CartProvider>
+      </AuthProvider>
     </div>
   );
 }

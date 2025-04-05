@@ -41,6 +41,10 @@
     padding: .5em;
     border-radius: 5px;
 }
+  
+.counter .minus, .counter .plus {
+cursor: pointer;
+}
 .counter p {
     padding: 0 1em;
 }

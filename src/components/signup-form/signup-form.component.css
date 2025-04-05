@@ -27,7 +27,9 @@ button {
     padding: .5em;
     background: #4b0082;
     color: #ffffff;
-    margin-top: 5% !important;
+}
+.signup-button {
+    margin-top: 5%;
 }
 .login {
     display: flex;

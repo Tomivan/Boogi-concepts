@@ -6,6 +6,9 @@
     left: 50%;
     transform: translate(-50%, -50%);
 }
+.login-button {
+    margin-top: 5%;
+}
 sub {
     text-align: right;
     margin-top: 3%;

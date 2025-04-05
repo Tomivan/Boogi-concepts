@@ -18,3 +18,23 @@ li {
 .link {
     text-decoration: none;
 }
+.user-welcome {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logout-button {
+    background: none;
+    border: 1px solid #4B0082;
+    color: #4B0082;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+  
+.logout-button:hover {
+    background: #4B0082;
+    color: white;
+}
