@@ -35,10 +35,11 @@ const Cart = () => {
 
   return (
     <div className='component'>
+      <h1>Cart</h1>
+      <hr />
+      
       {cartItems.map(item => (
         <section className="perfume-in-cart" key={item.id}>
-          <h1>Cart</h1>
-          <hr />
           <div className="top">
             <div className="cart-left">
               <img src={item.image} alt={item.name} className='cart-perfume' />

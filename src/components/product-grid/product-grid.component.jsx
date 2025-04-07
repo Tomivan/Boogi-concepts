@@ -1,40 +1,52 @@
 import React from 'react';
 import { useCart } from '../../context/CartContext';
-import { showSuccessAlert } from '../../utils/alert';
 import Perfume from '../../assets/images/perfume.jpg';
 import './product-grid.component.css';
 
-const ProductGrid = () => {
-    const addToCart = useCart();
+// Define your products array
+const products = [
+  {
+    id: 1,
+    name: 'Antonio Banderas',
+    price: 35000,
+    image: Perfume
+  },
+  {
+    id: 2,
+    name: 'Chanel No. 5',
+    price: 45000,
+    image: Perfume
+  },
+  {
+    id: 3,
+    name: 'Dior Sauvage',
+    price: 55000,
+    image: Perfume
+  },
+  {
+    id: 4,
+    name: 'Versace Eros',
+    price: 40000,
+    image: Perfume
+  }
+];
 
-    return(
-        <div className='perfumes grid'>
-            <div className="perfume">
-                <img src={Perfume} alt='a bottle of perfume' />
-                <p>Antonio Banderas</p>
-                <p>&#8358; 35,000</p>
-                <button onClick={() => addToCart()}>Add to Cart</button>
-            </div>
-            <div className="perfume">
-                <img src={Perfume} alt='a bottle of perfume' />
-                <p>Antonio Banderas</p>
-                <p>&#8358; 35,000</p>
-                <button>Add to Cart</button>
-            </div>
-            <div className="perfume">
-                <img src={Perfume} alt='a bottle of perfume' />
-                <p>Antonio Banderas</p>
-                <p>&#8358; 35,000</p>
-                <button>Add to Cart</button>
-            </div>
-            <div className="perfume">
-                <img src={Perfume} alt='a bottle of perfume' />
-                <p>Antonio Banderas</p>
-                <p>&#8358; 35,000</p>
-                <button>Add to Cart</button>
-            </div>
+const ProductGrid = () => {
+  // Destructure addToCart from useCart
+  const { addToCart } = useCart();
+
+  return (
+    <div className='perfumes grid'>
+      {products.map(product => (
+        <div className="perfume" key={product.id}>
+          <img src={product.image} alt={product.name} />
+          <p>{product.name}</p>
+          <p>&#8358; {product.price.toLocaleString()}</p>
+          <button onClick={() => addToCart(product)}>Add to Cart</button>
         </div>
-    )
-}
+      ))}
+    </div>
+  );
+};
 
 export default ProductGrid;

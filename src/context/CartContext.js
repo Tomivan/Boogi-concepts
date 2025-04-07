@@ -42,7 +42,6 @@ export function CartProvider({ children }) {
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
-        showSuccessAlert('Quantity Updated', `${product.name} quantity increased`);
       } else {
         newItems = [...prevItems, { ...product, quantity: 1 }];
         showSuccessAlert('Added to Cart', `${product.name} added to your cart`);

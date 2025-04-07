@@ -12,7 +12,7 @@
 label{
     margin: 2% 0;
 }
-input {
+input, select {
     height: 3vh;
     width: 20vw;
     border: 1px solid #e6e6fa;
