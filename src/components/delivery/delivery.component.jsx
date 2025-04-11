@@ -27,7 +27,7 @@ const Delivery = () => {
     firstName: '',
     lastName: '',
     address: '',
-    city: 'Lagos',
+    city: '',
     state: 'Lagos',
     lga: '',
     phone: '',
@@ -56,6 +56,7 @@ const Delivery = () => {
   const processOrder = async (transaction) => {
     setIsProcessing(true);
     try {
+      console.log("Attempting to call Cloud Function...");
       const sendOrderConfirmation = httpsCallable(functions, 'sendOrderConfirmation');
       
       const orderData = {
@@ -118,7 +119,11 @@ const Delivery = () => {
 
   return (
     <div className="component">
-      <h1>Billing Details</h1>
+        <div className="logo">
+            <span className='logo-purple'>BOGI</span>
+            <span className='logo-gold'>NOIR</span>
+        </div>
+      <h1 className='billing-heading'>Billing Details</h1>
       <div className="delivery">
         <form className="delivery-form">
           <div className="flex">
@@ -248,7 +253,7 @@ const Delivery = () => {
 
           <PaystackButton 
             {...paystackConfig} 
-            className="paystack-button"
+            className="place-order"
             disabled={!formData.email || !formData.lga || cartItems.length === 0 || isProcessing}
           />
         </form>
