@@ -125,7 +125,7 @@ const Delivery = () => {
         </div>
       <h1 className='billing-heading'>Billing Details</h1>
       <div className="delivery">
-        <form className="delivery-form">
+        <form className="delivery-form" onSubmit={(e) => e.preventDefault()}>
           <div className="flex">
             <div className="column">
               <label>First Name</label>

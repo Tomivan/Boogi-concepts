@@ -1,12 +1,43 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useCart } from '../../context/CartContext';
 import Perfume from '../../assets/images/perfume.jpg';
 import './shop.component.css';
 
+const products = [
+  {
+    id: 1,
+    name: 'Antonio Banderas',
+    price: 35000,
+    image: Perfume
+  },
+  {
+    id: 2,
+    name: 'Chanel No. 5',
+    price: 45000,
+    image: Perfume
+  },
+  {
+    id: 3,
+    name: 'Dior Sauvage',
+    price: 55000,
+    image: Perfume
+  },
+  {
+    id: 4,
+    name: 'Versace Eros',
+    price: 40000,
+    image: Perfume
+  }
+];
+
 const Shop = () => {
+
+    const { addToCart } = useCart();
+
     const navigate = useNavigate();
-    const redirectToProductDetail = () => {
-       navigate("/product-details");
+    const redirectToProductDetail = (product) => {
+       navigate("/product-details", { state: { product } });
     }
     return(
         <div className="shop">
@@ -15,37 +46,15 @@ const Shop = () => {
                     <h2>Men's Perfume</h2>
                     <Link to='/men' className='link'>View all</Link>
                 </div>
-                <div className="perfumes">
-                    <div className="perfume" onClick={redirectToProductDetail}>
-                        <img src={Perfume} alt='a bottle of perfume' />
-                        <p>Antonio Banderas</p>
-                        <p>&#8358; 35,000</p>
-                        <button className='add-to-cart'>Add to Cart</button>
-                    </div>
-                    <div className="perfume">
-                        <img src={Perfume} alt='a bottle of perfume' />
-                        <p>Antonio Banderas</p>
-                        <p>&#8358; 35,000</p>
-                        <button className='add-to-cart'>Add to Cart</button>
-                    </div>
-                    <div className="perfume">
-                        <img src={Perfume} alt='a bottle of perfume' />
-                        <p>Antonio Banderas</p>
-                        <p>&#8358; 35,000</p>
-                        <button className='add-to-cart'>Add to Cart</button>
-                    </div>
-                    <div className="perfume">
-                        <img src={Perfume} alt='a bottle of perfume' />
-                        <p>Antonio Banderas</p>
-                        <p>&#8358; 35,000</p>
-                        <button className='add-to-cart'>Add to Cart</button>
-                    </div>
-                    <div className="perfume">
-                        <img src={Perfume} alt='a bottle of perfume' />
-                        <p>Antonio Banderas</p>
-                        <p>&#8358; 35,000</p>
-                        <button className='add-to-cart'>Add to Cart</button>
-                    </div>
+                <div className='perfumes'>
+                    {products.map(product => (
+                        <div className="perfume" key={product.id}>
+                            <img src={product.image} alt={product.name} onClick={() => redirectToProductDetail(product)}/>
+                            <p>{product.name}</p>
+                            <p>&#8358; {product.price.toLocaleString()}</p>
+                            <button onClick={() => addToCart(product)}>Add to Cart</button>
+                        </div>
+                    ))}
                 </div>
             </section>
             <section className="section">
@@ -53,37 +62,15 @@ const Shop = () => {
                     <h2>Women's Perfume</h2>
                     <Link to='/women' className='link'>View all</Link>
                 </div>
-                <div className="perfumes">
-                    <div className="perfume">
-                        <img src={Perfume} alt='a bottle of perfume' />
-                        <p>Antonio Banderas</p>
-                        <p>&#8358; 35,000</p>
-                        <button className='add-to-cart'>Add to Cart</button>
-                    </div>
-                    <div className="perfume">
-                        <img src={Perfume} alt='a bottle of perfume' />
-                        <p>Antonio Banderas</p>
-                        <p>&#8358; 35,000</p>
-                        <button className='add-to-cart'>Add to Cart</button>
-                    </div>
-                    <div className="perfume">
-                        <img src={Perfume} alt='a bottle of perfume' />
-                        <p>Antonio Banderas</p>
-                        <p>&#8358; 35,000</p>
-                        <button className='add-to-cart'>Add to Cart</button>
-                    </div>
-                    <div className="perfume">
-                        <img src={Perfume} alt='a bottle of perfume' />
-                        <p>Antonio Banderas</p>
-                        <p>&#8358; 35,000</p>
-                        <button className='add-to-cart'>Add to Cart</button>
-                    </div>
-                    <div className="perfume">
-                        <img src={Perfume} alt='a bottle of perfume' />
-                        <p>Antonio Banderas</p>
-                        <p>&#8358; 35,000</p>
-                        <button className='add-to-cart'>Add to Cart</button>
-                    </div>
+                <div className='perfumes'>
+                    {products.map(product => (
+                        <div className="perfume" key={product.id}>
+                            <img src={product.image} alt={product.name} onClick={() => redirectToProductDetail(product)} />
+                            <p>{product.name}</p>
+                            <p>&#8358; {product.price.toLocaleString()}</p>
+                            <button onClick={() => addToCart(product)}>Add to Cart</button>
+                        </div>
+                    ))}
                 </div>
             </section>
         </div>

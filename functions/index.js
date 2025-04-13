@@ -112,7 +112,7 @@ exports.sendOrderConfirmation = functions
           
           <p style="margin-top: 30px;">
             We'll notify you when your order ships.<br>
-            Contact <a href="mailto:support@boginoire.com" style="color: #4B0082;">support@boginoire.com</a> with questions.
+            Contact <a href="mailto:gracejunkie20@gmail.com" style="color: #4B0082;">gracejunkie20@gmail.com</a> with questions.
           </p>
         </div>
       </div>
