@@ -16,7 +16,14 @@ const Cart = () => {
   } = useCart();
 
   const goToHomepage = () => navigate("/");
-  const moveToCheckout = () => navigate("/checkout");
+  const moveToCheckout = () => {
+    navigate("/checkout", { 
+      state: { 
+        cartItems,
+        cartTotal 
+      } 
+    });
+  };
 
   if (cartItems.length === 0) {
     return (
@@ -35,7 +42,7 @@ const Cart = () => {
 
   return (
     <div className='component'>
-      <h1>Cart</h1>
+      <h1 className='cart-h1'>Cart</h1>
       <hr />
       
       {cartItems.map(item => (

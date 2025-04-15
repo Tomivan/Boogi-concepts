@@ -8,6 +8,9 @@
 .cart {
     height: 10vh;
 }
+.cart-h1 {
+    margin-top: 5%;
+}
 .perfume-in-cart {
     margin-top: 3%;
 }

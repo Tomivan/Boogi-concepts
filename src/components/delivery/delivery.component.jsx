@@ -75,10 +75,12 @@ const Delivery = () => {
       
       clearCart();
       navigate('/order-completed', { 
-        state: { 
-          transactionId: transaction.reference,
-          orderId: result.data.orderId 
-        } 
+        state: {
+          cartItems: result.items,
+          cartTotal: result.amount,
+          orderId: result.orderId,
+          shippingAddress: result.shippingAddress
+        }
       });
     } catch (error) {
       console.error('Order processing failed:', error);

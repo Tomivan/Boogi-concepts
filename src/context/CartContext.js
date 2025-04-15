@@ -1,114 +1,158 @@
-// src/context/CartContext.js
-import { createContext, useContext, useState, useEffect } from 'react';
-import Swal from 'sweetalert2';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { 
+  doc, 
+  onSnapshot, 
+  updateDoc, 
+  arrayRemove 
+} from 'firebase/firestore';
+import { auth, db } from '../firebase';
+import { getCart, syncCart, mergeCarts, clearFirebaseCart } from '../firebase/cartService';
 
 const CartContext = createContext();
 
-export function CartProvider({ children }) {
+export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
+  const [userId, setUserId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Load cart from localStorage on initial render
+  // Handle auth state changes
   useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
-    }
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      try {
+        if (user) {
+          setUserId(user.uid);
+          // Load user's cart from Firestore
+          const serverCart = await getCart(user.uid);
+          const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
+          
+          if (localCart.length > 0) {
+            // Merge local cart with server cart
+            await mergeCarts(user.uid, localCart);
+            const mergedCart = await getCart(user.uid);
+            setCartItems(mergedCart);
+            localStorage.removeItem('cart');
+          } else {
+            setCartItems(serverCart);
+          }
+        } else {
+          setUserId(null);
+          // Fall back to localStorage when logged out
+          const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
+          setCartItems(localCart);
+        }
+      } catch (error) {
+        console.error('Error handling auth state change:', error);
+      } finally {
+        setLoading(false);
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
-  // Save cart to localStorage whenever it changes
+  // Sync cart changes to appropriate storage
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cartItems));
-  }, [cartItems]);
+    if (!cartItems.length || loading) return;
 
-  const showSuccessAlert = (title, text) => {
-    Swal.fire({
-      title,
-      text,
-      icon: 'success',
-      confirmButtonColor: '#4B0082', // Your brand purple
-      timer: 2000,
-      timerProgressBar: true,
+    const syncData = async () => {
+      try {
+        if (userId) {
+          await syncCart(userId, cartItems);
+        } else {
+          localStorage.setItem('cart', JSON.stringify(cartItems));
+        }
+      } catch (error) {
+        console.error('Error syncing cart:', error);
+      }
+    };
+
+    const debounceTimer = setTimeout(() => {
+      syncData();
+    }, 500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [cartItems, userId, loading]);
+
+  // Real-time cart updates for logged-in users
+  useEffect(() => {
+    if (!userId || loading) return;
+
+    const cartRef = doc(db, 'carts', userId);
+    const unsubscribe = onSnapshot(cartRef, (doc) => {
+      if (doc.exists()) {
+        setCartItems(doc.data().items || []);
+      }
     });
-  };
 
-  const addToCart = (product) => {
+    return () => unsubscribe();
+  }, [userId, loading]);
+
+  const addToCart = async (product) => {
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
-      let newItems;
-      
       if (existingItem) {
-        newItems = prevItems.map(item =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+        return prevItems.map(item =>
+          item.id === product.id 
+            ? { ...item, quantity: item.quantity + 1 } 
             : item
         );
-      } else {
-        newItems = [...prevItems, { ...product, quantity: 1 }];
-        showSuccessAlert('Added to Cart', `${product.name} added to your cart`);
       }
-      
-      return newItems;
+      return [...prevItems, { ...product, quantity: 1 }];
     });
   };
-
-  const removeFromCart = (productId, productName) => {
-    setCartItems(prevItems => {
-      const itemToRemove = prevItems.find(item => item.id === productId);
-      Swal.fire({
-        title: 'Remove Item?',
-        text: `Are you sure you want to remove ${productName || 'this item'} from your cart?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#4B0082',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, remove it!'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          const newItems = prevItems.filter(item => item.id !== productId);
-          setCartItems(newItems);
-          showSuccessAlert('Removed', `${productName || 'Item'} removed from cart`);
-        }
-      });
-      return prevItems; // Return unchanged if cancelled
-    });
+  
+  const removeFromCart = async (productId) => {
+    if (userId) {
+      try {
+        const cartRef = doc(db, 'carts', userId);
+        await updateDoc(cartRef, {
+          items: arrayRemove(...cartItems.filter(item => item.id === productId))
+        });
+      } catch (error) {
+        console.error('Error removing item:', error);
+      }
+    } else {
+      setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
+    }
+  };
+  
+  const clearCart = async () => {
+    try {
+      if (userId) {
+        await clearFirebaseCart(userId);
+      } else {
+        localStorage.removeItem('cart');
+        setCartItems([]);
+      }
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+    }
   };
 
-  const updateQuantity = (productId, newQuantity, productName) => {
+  const updateQuantity = async (productId, newQuantity) => {
     if (newQuantity < 1) {
-      removeFromCart(productId, productName);
+      removeFromCart(productId);
       return;
     }
-    
-    setCartItems(prevItems => {
-      const newItems = prevItems.map(item =>
-        item.id === productId ? { ...item, quantity: newQuantity } : item
-      );
-      
-      // Only show notification if quantity actually changed
-      const changedItem = prevItems.find(item => item.id === productId);
-      if (changedItem && changedItem.quantity !== newQuantity) {
-        showSuccessAlert('Quantity Updated', `${productName} quantity set to ${newQuantity}`);
-      }
-      
-      return newItems;
-    });
-  };
 
-  const clearCart = () => {
-    Swal.fire({
-      title: 'Clear Cart?',
-      text: 'Are you sure you want to remove all items from your cart?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#4B0082',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, clear it!'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setCartItems([]);
-        showSuccessAlert('Cart Cleared', 'All items removed from cart');
+    // Optimistic update
+    setCartItems(prevItems =>
+      prevItems.map(item =>
+        item.id === productId ? { ...item, quantity: newQuantity } : item
+      )
+    );
+
+    // Sync with Firebase if logged in
+    if (userId) {
+      try {
+        await syncCart(userId, cartItems);
+      } catch (error) {
+        console.error('Error updating quantity:', error);
+        // Revert if sync fails
+        const originalCart = await getCart(userId);
+        setCartItems(originalCart);
       }
-    });
+    }
   };
 
   const cartTotal = cartItems.reduce(
@@ -130,14 +174,19 @@ export function CartProvider({ children }) {
         updateQuantity,
         clearCart,
         cartTotal,
-        cartCount
+        cartCount,
+        loading
       }}
     >
       {children}
     </CartContext.Provider>
   );
-}
+};
 
-export function useCart() {
-  return useContext(CartContext);
-}
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (context === undefined) {
+    throw new Error('useCart must be used within a CartProvider');
+  }
+  return context;
+};

@@ -1,27 +1,56 @@
+// completed.component.js
 import React from 'react';
-import Perfume from '../../assets/images/perfume.jpg';
+import { useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './completed.component.css';
 
 const Completed = () => {
-    return(
-        <div className='completed'>
-            <div className="confirmation">
-                <p>"Thank you for your order!"</p>
+  const { state } = useLocation();
+  const navigate = useNavigate();
+  const { cartItems = [], cartTotal = 0, orderId = 'N/A', shippingAddress = {} } = state || {};
+
+  const goToHomepage = () => navigate("/");
+
+  return (
+    <div className='completed'>
+      <div className="confirmation">
+        <p>Thank you for your order!</p>
+      </div>
+      
+      <div className="order-details">
+        <p>Order #{orderId}</p>
+        
+        {cartItems.map((item, index) => (
+          <div className="item" key={index}>
+            <img src={item.image} alt={item.name} className='cart-perfume' />
+            <div className="left-detail">
+              <p>{item.name}</p>
+              <p>₦{item.price.toLocaleString()} × {item.quantity}</p>
+              <p>Subtotal: ₦{(item.price * item.quantity).toLocaleString()}</p>
             </div>
-            <div className="order-details">
-                <p>Order 82392390</p>
-                <div className="item">
-                    <img src={Perfume} alt='a bottle of perfume' className='cart-perfume' />
-                    <div className="left-detail">
-                        <p>Antonio Banderas</p>
-                        <p>&#8358; 34000</p>
-                        <p>20, Omonrinre Johnson street, Lekki, Lagos.</p>
-                    </div>
-                </div>
-                <button className='start-shopping'>Back to shopping</button>
-            </div>
+          </div>
+        ))}
+        
+        <div className="total-summary">
+          <p><strong>Total: ₦{cartTotal.toLocaleString()}</strong></p>
         </div>
-    )
-}
+        
+        {shippingAddress && (
+          <div className="shipping-info">
+            <h3>Shipping to:</h3>
+            <p>{shippingAddress.name}</p>
+            <p>{shippingAddress.street}</p>
+            <p>{shippingAddress.city}, {shippingAddress.state}</p>
+            <p>{shippingAddress.phone}</p>
+          </div>
+        )}
+        
+        <button className='start-shopping' onClick={goToHomepage}>
+          Back to shopping
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default Completed;

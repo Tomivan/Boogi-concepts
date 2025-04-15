@@ -16,6 +16,7 @@ const mailTransport = nodemailer.createTransport({
   },
 });
 
+
 exports.sendOrderConfirmation = functions
   .runWith({
     secrets: ['GMAIL_EMAIL', 'GMAIL_PASSWORD'],
@@ -174,3 +175,4 @@ exports.sendOrderConfirmation = functions
       );
     }
   });
+  
