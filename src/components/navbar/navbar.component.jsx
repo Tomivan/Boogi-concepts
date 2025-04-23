@@ -19,6 +19,10 @@ const Navbar = () => {
     return () => unsubscribe();
   }, []);
 
+  const redirectToHomepage = () => {
+    navigate("/")
+  }
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -34,7 +38,7 @@ const Navbar = () => {
 
   return (
     <div className='navbar'>
-      <div className="logo">
+      <div className="logo" onClick={redirectToHomepage}>
         <span className='logo-purple'>BOGI</span>
         <span className='logo-gold'>NOIR</span>
       </div>

@@ -45,6 +45,10 @@ const Delivery = () => {
     return matchedKey ? LOCAL_GOV_SHIPPING_FEES[matchedKey] : LOCAL_GOV_SHIPPING_FEES.default;
   };
 
+  const redirectToHomepage = () => {
+    navigate("/")
+  }
+
   const shippingFee = calculateShippingFee(formData.lga);
   const grandTotal = (cartTotal + shippingFee) * 100; // Paystack uses kobo
 
@@ -121,7 +125,7 @@ const Delivery = () => {
 
   return (
     <div className="component">
-        <div className="logo">
+        <div className="logo" onClick={redirectToHomepage}>
             <span className='logo-purple'>BOGI</span>
             <span className='logo-gold'>NOIR</span>
         </div>
