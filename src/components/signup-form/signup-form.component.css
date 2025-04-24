@@ -50,3 +50,9 @@ button {
     font-family: 'Playfair Display';
     font-size: 36px;
 }
+
+@media screen and (max-width: 767px) {
+    input {
+        width: 80vw;
+    }
+}

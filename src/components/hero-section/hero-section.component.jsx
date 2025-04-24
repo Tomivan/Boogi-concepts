@@ -31,7 +31,7 @@ const HeroSection = () => {
                 <span className="visually-hidden">Next</span>
             </a>
             <div className="content">
-                <h1>Discover the Essence of Elegance</h1>
+                <h2>Discover the Essence of Elegance</h2>
                 <button className='shop-now'>Shop Now</button>
             </div>
         </div> 

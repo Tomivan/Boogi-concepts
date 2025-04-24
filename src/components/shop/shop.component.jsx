@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useCart } from '../../context/CartContext';
 import Perfume from '../../assets/images/perfume.jpg';
 import './shop.component.css';
 
@@ -33,8 +32,6 @@ const products = [
 
 const Shop = () => {
 
-    const { addToCart } = useCart();
-
     const navigate = useNavigate();
     const redirectToProductDetail = (product) => {
        navigate("/product-details", { state: { product } });
@@ -52,7 +49,6 @@ const Shop = () => {
                             <img src={product.image} alt={product.name} onClick={() => redirectToProductDetail(product)}/>
                             <p>{product.name}</p>
                             <p>&#8358; {product.price.toLocaleString()}</p>
-                            <button onClick={() => addToCart(product)}>Add to Cart</button>
                         </div>
                     ))}
                 </div>
@@ -68,7 +64,6 @@ const Shop = () => {
                             <img src={product.image} alt={product.name} onClick={() => redirectToProductDetail(product)} />
                             <p>{product.name}</p>
                             <p>&#8358; {product.price.toLocaleString()}</p>
-                            <button onClick={() => addToCart(product)}>Add to Cart</button>
                         </div>
                     ))}
                 </div>
