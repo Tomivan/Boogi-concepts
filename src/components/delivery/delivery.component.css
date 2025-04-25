@@ -44,3 +44,26 @@ textarea{
     display: flex;
     justify-content: space-between;
 }
+
+@media screen and (max-width: 767px) {
+    .delivery {
+        flex-direction: column;
+    }
+    .place-order {
+        width: 70vw;
+    }
+    .billing-summary {
+        width: 70vw;
+        margin-top: 5%;
+    }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+    .billing-summary {
+        width: 40vw;
+        height: 18vh;
+    }
+    .place-order {
+        width: 25vw;
+    }
+}

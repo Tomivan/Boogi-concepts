@@ -38,6 +38,32 @@ h2{
 @media screen and (max-width: 767px) {
     .carousel {
         margin-top: 50%;
+        width: 90vw;
+        margin-left: 2%;
     }
-    
+    .width{
+        width: 90vw;
+    }
+    .shop-now {
+        width: 50vw;
+        margin-left: 20%;
+    }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+    .carousel {
+        width: 90vw;
+        margin-left: 2%;
+    }
+    .width {
+        width: 90vw;
+        margin-top: 5%;
+    }
+    .carousel-item::after {
+        margin-top: 5%;
+        width: 90vw;
+    }
+    .shop-now {
+        width: 30vw;
+    }
 }

@@ -1,3 +1,18 @@
 .checkbox{
     width: 5vw;
 }
+
+@media screen and (max-width: 767px) {
+  .brand{
+    width: 90vw;
+  }   
+  .checkbox {
+    margin-right: 3%;
+  } 
+}
+
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+   .brand {
+    width: 100%;
+   }
+}

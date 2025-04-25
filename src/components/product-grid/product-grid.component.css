@@ -1,3 +1,20 @@
 .grid {
     margin-left: 3%;
 }
+.price-edit {
+    display: flex;
+    gap: 5px;
+    margin: 10px 0;
+  }
+  
+  .price-edit input {
+    width: 80px;
+    padding: 5px;
+  }
+  
+
+@media screen and (max-width: 767px) {
+    .column-flex{
+        flex-direction: column;
+    }
+}

@@ -9,7 +9,7 @@ const Women = () => {
         <div className='component'>
             <Navbar />
             <Search />
-            <div className='flex'>
+            <div className='flex column-flex'>
                 <Brand />
                 <ProductGrid />
             </div>

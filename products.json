@@ -1,0 +1,24 @@
+{
+    "products": {
+      "product1": {
+        "name": "Antonio Banderas",
+        "price": 35000,
+        "image": "perfume.jpg"
+      },
+      "product2": {
+        "name": "Chanel No. 5",
+        "price": 45000,
+        "image": "perfume.jpg"
+      },
+      "product3": {
+        "name": "Dior Sauvage",
+        "price": 55000,
+        "image": "perfume.jpg"
+      },
+      "product4": {
+        "name": "Versace Eros",
+        "price": 40000,
+        "image": "perfume.jpg"
+      }
+    }
+  }

@@ -10,3 +10,11 @@
 .details .add-to-cart {
     width: 30vw;
 }
+
+
+@media screen and (max-width: 767px) {
+    .product-details {
+        flex-direction: column;
+        margin-top: 30%;
+    }
+}

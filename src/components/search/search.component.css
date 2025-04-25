@@ -21,3 +21,27 @@
     left: 5%;
     top: 15%;
 }
+
+@media screen and (max-width: 767px) {
+    .search {
+        margin: 50% 0 0 0;
+        flex-direction: column;
+    }
+    .search-button {
+        margin-top: 3%;
+        width: 50vw;
+    }
+    .search-icon{
+        left: 10%;
+        top: 30%;
+    }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+    .search {
+        margin-top: 10%;
+    }
+    .search-button {
+        width: 15vw;
+    }
+}
