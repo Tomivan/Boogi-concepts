@@ -1,6 +1,8 @@
 import React from 'react';
 import { useCart } from '../../context/CartContext';
 import Perfume from '../../assets/images/perfume.jpg';
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import './product-grid.component.css';
 
 // Define your products array

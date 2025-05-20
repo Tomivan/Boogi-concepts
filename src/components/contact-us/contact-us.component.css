@@ -1,0 +1,11 @@
+.contact-us {
+    display: flex;
+    position: absolute;
+    right: 5%;
+}
+.whatsapp-icon {
+    height: 10vh;
+    margin-top: -25%;
+    padding: 1em;
+    color: #25d366;
+}

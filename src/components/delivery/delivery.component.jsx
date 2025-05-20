@@ -60,7 +60,6 @@ const Delivery = () => {
   const processOrder = async (transaction) => {
     setIsProcessing(true);
     try {
-      console.log("Attempting to call Cloud Function...");
       const sendOrderConfirmation = httpsCallable(functions, 'sendOrderConfirmation');
       
       const orderData = {
@@ -74,21 +73,31 @@ const Delivery = () => {
         total: cartTotal + shippingFee,
         transactionId: transaction.reference
       };
-
+  
       const result = await sendOrderConfirmation({ orderData });
       
       clearCart();
       navigate('/order-completed', { 
         state: {
-          cartItems: result.items,
-          cartTotal: result.amount,
-          orderId: result.orderId,
-          shippingAddress: result.shippingAddress
+          cartItems: cartItems.map(item => ({
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.imageUrl  // Changed from imageUrl to image to match Completed component
+          })),
+          cartTotal: cartTotal + shippingFee,
+          orderId: transaction.reference,
+          shippingAddress: {
+            name: `${formData.firstName} ${formData.lastName}`,
+            street: formData.address,
+            city: formData.city,
+            state: formData.state,
+            phone: formData.phone
+          }
         }
       });
     } catch (error) {
       console.error('Order processing failed:', error);
-      // Payment succeeded but order processing failed
       navigate('/order-completed', { 
         state: { 
           transactionId: transaction.reference,
@@ -100,13 +109,18 @@ const Delivery = () => {
     }
   };
 
-  const paystackConfig = {
+  const paystackConfig = 
+  {
     email: formData.email,
     amount: grandTotal,
     publicKey: process.env.REACT_APP_PAYSTACK_PUBLIC_KEY,
     text: isProcessing ? "Processing..." : `Pay ₦${(grandTotal / 100).toLocaleString()}`,
     onSuccess: (transaction) => processOrder(transaction),
     onClose: () => console.log('Payment window closed'),
+    onError: (error) => {
+      console.error('Paystack Error:', error);
+      alert(`Payment error: ${error.message || 'Unknown error occurred'}`);
+    },
     metadata: {
       custom_fields: [
         {
@@ -256,7 +270,7 @@ const Delivery = () => {
               placeholder="Any special delivery instructions"
             />
           </div>
-
+          
           <PaystackButton 
             {...paystackConfig} 
             className="place-order"
