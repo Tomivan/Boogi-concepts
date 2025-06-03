@@ -16,6 +16,8 @@ const Completed = () => {
       shippingAddress = {},
       error 
     } = state || {};
+
+    console.log(state)
   
     // Transform items if they come from different sources
     const normalizedItems = cartItems.map(item => ({
@@ -28,6 +30,7 @@ const Completed = () => {
     const goToHomepage = () => navigate("/");
   
     if (error) {
+      console.log(error)
       return (
         <div className='completed'>
           <div className="confirmation error">

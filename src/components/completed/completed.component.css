@@ -1,10 +1,10 @@
-.completed{
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+.error{
+   margin: 10% 0 0 5%;
 }
 .item{
     display: flex;
     margin-bottom: 5%;
+}
+.start-shopping {
+    width: 15vw;
 }

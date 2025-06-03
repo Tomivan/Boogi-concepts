@@ -9,10 +9,10 @@ const HeroSection = () => {
     return(
         <div id="carouselExampleAutoplaying" className="carousel slide" data-bs-ride="carousel">
             <div class="carousel-inner">
-                <div className="carousel-item active">
+                {/* <div className="carousel-item active">
                     <img src={Background} className="d-block width" alt="..." />
-                </div>
-                <div className="carousel-item">
+                </div> */}
+                <div className="carousel-item active">
                     <img src={Background1} className="d-block width" alt="..." />
                 </div>
                 <div className="carousel-item">
@@ -32,7 +32,6 @@ const HeroSection = () => {
             </a>
             <div className="content">
                 <h2>Discover the Essence of Elegance</h2>
-                <button className='shop-now'>Shop Now</button>
             </div>
         </div> 
     )

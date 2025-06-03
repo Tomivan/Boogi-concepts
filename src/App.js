@@ -4,8 +4,6 @@ import { AuthProvider } from './context/AuthContext';
 import { onAuthStateChanged } from 'firebase/auth';
 import { CartProvider } from './context/CartContext';
 import Pages from './pages';
-import 'bootstrap/dist/css/bootstrap.css';
-import 'bootstrap/dist/js/bootstrap.js';
 import './App.css';
 
 function App() {

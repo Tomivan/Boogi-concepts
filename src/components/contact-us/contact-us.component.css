@@ -1,7 +1,7 @@
 .contact-us {
     display: flex;
-    position: absolute;
-    right: 5%;
+    justify-content: flex-end;
+    margin-top: 15%;
 }
 .whatsapp-icon {
     height: 10vh;

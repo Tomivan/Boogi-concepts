@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFemale, faHome, faMale, faShoppingBag } from '@fortawesome/free-solid-svg-icons';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { useCart } from '../../context/CartContext';
@@ -39,14 +41,24 @@ const Navbar = () => {
   return (
     <div className='navbar'>
       <div className="logo" onClick={redirectToHomepage}>
-        <span className='logo-purple'>BOGI</span>
-        <span className='logo-gold'>NOIR</span>
+        <span className='logo-purple'>BOOGI</span>
+        <span className='logo-gold'>NOIRE</span>
       </div>
       <ul>
-        <Link to='/' className='link'><li>Home</li></Link>
-        <Link to='/men' className='link'><li>Men</li></Link>
-        <Link to='/women' className='link'><li>Women</li></Link>
+        <Link to='/' className='link'>
+          <FontAwesomeIcon icon={faHome} className='navbar-icon' />
+          <li>Home</li>
+        </Link>
+        <Link to='/men' className='link'>
+          <FontAwesomeIcon icon={faMale} className='navbar-icon' />
+          <li>Men</li>
+        </Link>
+        <Link to='/women' className='link'>
+          <FontAwesomeIcon icon={faFemale} className='navbar-icon' /> 
+          <li>Women</li>
+        </Link>
         <Link to='/cart' className='link'>
+          <FontAwesomeIcon icon={faShoppingBag} className='navbar-icon' />
           <li>Cart {cartCount > 0 && `(${cartCount})`}</li>
         </Link>
       </ul>
