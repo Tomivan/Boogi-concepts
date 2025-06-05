@@ -82,8 +82,8 @@ const ResetPasswordForm = () => {
     return (
       <div className="component">
         <div className="logo">
-          <span className='logo-purple'>BOGI</span>
-          <span className='logo-gold'>NOIR</span>
+          <span className='logo-purple'>BOOGI</span>
+          <span className='logo-gold'>NOIRE</span>
         </div>
         <div className="reset-password-form">
           <h2>Invalid Reset Link</h2>
@@ -99,8 +99,8 @@ const ResetPasswordForm = () => {
   return (
     <div className="component">
       <div className="logo">
-        <span className='logo-purple'>BOGI</span>
-        <span className='logo-gold'>NOIR</span>
+        <span className='logo-purple'>BOOGI</span>
+        <span className='logo-gold'>NOIRE</span>
       </div>
       <div className="reset-password-form">
         {success ? (

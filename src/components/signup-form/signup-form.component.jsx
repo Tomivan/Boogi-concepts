@@ -91,8 +91,8 @@ const SignupForm = () => {
     return(
         <div className='component'>
             <div className="logo">
-                <span className='logo-purple'>BOGI</span>
-                <span className='logo-gold'>NOIR</span>
+                <span className='logo-purple'>BOOGI</span>
+                <span className='logo-gold'>NOIRE</span>
             </div>
             <form className='signup-form' onSubmit={handleSignup}>
                 <label>Full Name</label>

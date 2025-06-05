@@ -140,33 +140,31 @@ const Delivery = () => {
   return (
     <div className="component">
         <div className="logo" onClick={redirectToHomepage}>
-            <span className='logo-purple'>BOGI</span>
-            <span className='logo-gold'>NOIR</span>
+            <span className='logo-purple'>BOOGI</span>
+            <span className='logo-gold'>NOIRE</span>
         </div>
-      <h1 className='billing-heading'>Billing Details</h1>
       <div className="delivery">
         <form className="delivery-form" onSubmit={(e) => e.preventDefault()}>
-          <div className="flex">
-            <div className="column">
-              <label>First Name</label>
-              <input 
-                type='text' 
-                name='firstName'
-                value={formData.firstName}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="column">
-              <label>Last name</label>
-              <input 
-                type='text' 
-                name='lastName'
-                value={formData.lastName}
-                onChange={handleChange}
-                required
-              />
-            </div>
+          <h1 className='billing-heading'>Billing Details</h1>
+          <div className="form-group">
+            <label>First Name</label>
+            <input 
+              type='text' 
+              name='firstName'
+              value={formData.firstName}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Last name</label>
+            <input 
+              type='text' 
+              name='lastName'
+              value={formData.lastName}
+              onChange={handleChange}
+              required
+            />
           </div>
 
           <div className="form-group">
@@ -205,7 +203,7 @@ const Delivery = () => {
           </div>
 
           <div className="form-group">
-            <label>Local Government Area*</label>
+            <label>Location*</label>
             <select
               name="lga"
               value={formData.lga}

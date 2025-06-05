@@ -46,8 +46,8 @@ const LoginForm = () => {
     return(
         <div className="component">
             <div className="logo">
-                <span className='logo-purple'>BOGI</span>
-                <span className='logo-gold'>NOIR</span>
+                <span className='logo-purple'>BOOGI</span>
+                <span className='logo-gold'>NOIRE</span>
             </div>
             <form className='login-form' onSubmit={handleLogin}>
                 {error && <p className="error-message">{error}</p>}

@@ -1,25 +1,21 @@
 .delivery{
     display: flex;
+    justify-content: space-around;
 }
 .delivery-form{
     display: flex;
     flex-direction: column;
-    width: 80%;
+    width: 45%;
 }
 .billing-heading{
     margin-top: 5%;
 }
-.column {
-    display: flex;
-    flex-direction: column;
-    width: 50%;
+.delivery-form input{
+    height: 6vh;
 }
-.column:first-child {
-    margin-right: 3%;
-}
-.delivery-form input, select{
-    width: 100%;
+select {
     height: 10vh;
+    width: 100%;
 }
 
 .place-order{
@@ -36,7 +32,7 @@ textarea{
     box-shadow: 0px 5px 10px rgba(0,0,0,0.1);
     padding: 1em;
     margin-left: 2%;
-    width: 18%;
+    width: 30%;
     height: 28vh;
     border-radius: 5px;
 }
