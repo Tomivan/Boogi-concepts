@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from '../components/navbar/navbar.component';
 import Search from '../components/search/search.component';
 import Brand from '../components/brand/brand.component';
@@ -7,18 +7,26 @@ import ContactUs from '../components/contact-us/contact-us.component';
 import Footer from '../components/footer/footer.component';
 
 const Women = () => {
-    return(
+    const [brandFilters, setBrandFilters] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const genderFilter = ['Female', 'Unisex', 'female', 'unisex'];
+
+    return (
         <div className='component'>
             <Navbar />
-            <Search />
+            <Search onSearch={setSearchTerm} />
             <div className='flex column-flex'>
-                <Brand />
-                <ProductGrid />
+                <Brand onBrandFilter={setBrandFilters} />
+                <ProductGrid 
+                    genderFilter={genderFilter}
+                    brandFilter={brandFilters}
+                    searchTerm={searchTerm}
+                />
             </div>
             <ContactUs />
             <Footer />
         </div>
-    )
-}
+    );
+};
 
 export default Women;

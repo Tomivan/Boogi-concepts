@@ -8,6 +8,8 @@
 .search-input {
     width: 50vw;
     height: 7vh;
+    padding: 0.75rem 1rem 0.75rem 3rem;
+    text-indent: 0;
 }
 .search-input::placeholder {
     padding-left: 2em;
@@ -19,7 +21,21 @@
 .search-icon {
     position: relative;
     left: 5%;
-    top: 15%;
+    top: 30%;
+    color: #0000001e;
+}
+.search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-input[type="search"]::-webkit-search-decoration,
+.search-input[type="search"]::-webkit-search-results-button,
+.search-input[type="search"]::-webkit-search-results-decoration {
+  display: none;
+}
+.fa-times {
+    color: red;
+    margin: 2% 0 0  3%;
 }
 
 @media screen and (max-width: 767px) {

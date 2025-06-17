@@ -15,12 +15,12 @@ const ProductDetails = () => {
 
   return(
     <div className="product-details">
-      <img src={product.image} alt={`a bottle of ${product.name}`} />
+      <img src={product.ImageUrl} alt={`a bottle of ${product.Name}`} />
       <div className="details">
-        <p><strong className='name'>{product.name}</strong></p>
-        <p>Brand: {product.brand}</p>
-        <p><strong>&#8358; {product.price.toLocaleString()}</strong></p>
-        <p>{product.description}</p>
+        <p><strong className='name'>{product.Name}</strong></p>
+        <p>Brand: {product['Brand Name'] || product.Brand || 'No brand specified'}</p>
+        <p><strong>&#8358; {product.Price.toLocaleString()}</strong></p>
+        <p>{product.Description}</p>
         <button className='add-to-cart' onClick={() => addToCart(product)}>Add to Cart</button>
       </div>
     </div>

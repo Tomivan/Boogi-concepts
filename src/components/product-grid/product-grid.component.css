@@ -1,3 +1,6 @@
+.product-management {
+  width: 100%;
+}
 .grid {
     margin-left: 3%;
 }
@@ -28,7 +31,7 @@
 }
 
 .add-product-button {
-  background-color: #2196F3;
+  background-color: #4b0082;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -37,6 +40,71 @@
   margin-bottom: 20px;
   width: 15vw;
   margin-left: 63%;
+}
+
+.pagination-info {
+  text-align: center;
+  margin-top: 10%;
+  color: #616161;
+  font-size: 0.9rem;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.pagination-button {
+  padding: 0.5rem 1rem;
+  background: #4b0082;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.page-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #4b0082;
+  color: #4b0082;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-button:hover {
+  background: #f5f5f5;
+}
+
+.page-button.active {
+  background: #1976d2;
+  color: white;
+  border-color: #1976d2;
 }
 
 @media screen and (max-width: 767px) {

@@ -1,5 +1,9 @@
 .checkbox{
     width: 5vw;
+    margin-left: -10%;
+}
+.brand {
+  width: 18vw;
 }
 
 @media screen and (max-width: 767px) {
