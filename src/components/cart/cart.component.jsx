@@ -7,22 +7,17 @@ import './cart.component.css';
 
 const Cart = () => {
   const navigate = useNavigate();
-  const {
-    cartItems,
-    removeFromCart,
-    updateQuantity,
-    cartTotal,
-    clearCart
-  } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
 
   const goToHomepage = () => navigate("/");
-  const moveToCheckout = () => {
-    navigate("/checkout", { 
-      state: { 
-        cartItems,
-        cartTotal 
-      } 
-    });
+  const moveToCheckout = () => navigate("/checkout", { state: { cartItems, cartTotal } });
+
+  const handleDecrement = (item) => {
+    if (item.quantity > 1) {
+      updateQuantity(item.id, item.quantity - 1);
+    } else {
+      removeFromCart(item.id);
+    }
   };
 
   if (cartItems.length === 0) {
@@ -31,7 +26,6 @@ const Cart = () => {
         <div className="empty">
           <FontAwesomeIcon icon={faCartPlus} className='cart' />
           <p>Your cart is empty</p>
-          <p>Browse our perfumes and get the best deals</p>
           <button className='start-shopping' onClick={goToHomepage}>
             Shop for Perfumes
           </button>
@@ -49,14 +43,18 @@ const Cart = () => {
         <section className="perfume-in-cart" key={item.id}>
           <div className="top">
             <div className="cart-left">
-              <img src={item.image} alt={item.name} className='cart-perfume' />
+              <img 
+                src={item.ImageUrl || item.image} 
+                alt={item.Name || item.name} 
+                className='cart-perfume' 
+              />
               <div className="left-detail">
-                <p>{item.name}</p>
-                <p>In stock</p>
+                <p>{item.Name || item.name}</p>
+                <p>Brand: {item['Brand Name'] || item.Brand || 'No brand specified'}</p>
               </div>
             </div>
             <div className="cart-right">
-              <p><strong>&#8358; {item.price.toLocaleString()}</strong></p>
+              <p><strong>₦{(item.price * item.quantity).toLocaleString()}</strong></p>
             </div>
           </div>
           <div className="bottom">
@@ -65,17 +63,9 @@ const Cart = () => {
               <p>Remove</p>
             </div>
             <div className="counter">
-              <FontAwesomeIcon 
-                icon={faMinus} 
-                className='minus' 
-                onClick={() => updateQuantity(item.id, item.quantity - 1)}
-              />
+              <FontAwesomeIcon icon={faMinus} className='minus' onClick={() => handleDecrement(item)} />
               <p><strong>{item.quantity}</strong></p>
-              <FontAwesomeIcon 
-                icon={faPlus} 
-                className='plus' 
-                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-              />
+              <FontAwesomeIcon icon={faPlus} className='plus' onClick={() => updateQuantity(item.id, item.quantity + 1)} />
             </div>
           </div>
           <hr />
@@ -83,9 +73,14 @@ const Cart = () => {
       ))}
       
       <section className='total'>
-        <p><strong>Total: </strong>&#8358; {cartTotal.toLocaleString()}</p>
+        <div className="total-actions">
+          <button className='clear-cart' onClick={clearCart}>
+            Clear Cart
+          </button>
+          <p><strong>Total: </strong>₦{cartTotal.toLocaleString()}</p>
+        </div>
         <button className='checkout' onClick={moveToCheckout}>
-          Checkout
+          Proceed to Checkout
         </button>
       </section>
     </div>

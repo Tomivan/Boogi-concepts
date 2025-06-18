@@ -3,47 +3,65 @@ const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 const { initializeApp } = require('firebase-admin/app');
 
-// Initialize Firebase Admin
-const app = initializeApp();
+// Initialize Firebase Admin SDK
+admin.initializeApp();
 const firestore = admin.firestore();
 
-// Email configuration
-const mailTransport = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_EMAIL,
-    pass: process.env.GMAIL_PASSWORD,
-  },
-});
+// Email transporter configuration using environment secrets
+const configureMailTransport = () => {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_EMAIL,
+      pass: process.env.GMAIL_PASSWORD,
+    },
+    pool: true,
+    maxConnections: 1,
+    rateDelta: 20000, // 20 seconds delay between messages
+    rateLimit: 5 // Max 5 messages per rateDelta
+  });
+};
 
-
+// ========================
+// ORDER CONFIRMATION FUNCTION
+// ========================
 exports.sendOrderConfirmation = functions
   .runWith({
     secrets: ['GMAIL_EMAIL', 'GMAIL_PASSWORD'],
-    timeoutSeconds: 30
+    timeoutSeconds: 60,
+    memory: '1GB'
   })
   .https.onCall(async (data, context) => {
+    functions.logger.log('Order confirmation triggered', { data });
+
     // Authentication check
     if (!context.auth) {
+      functions.logger.error('Unauthenticated order attempt');
       throw new functions.https.HttpsError(
         'unauthenticated',
-        'Only authenticated users can place orders'
+        'Authentication required to place orders'
+      );
+    }
+
+    // Input validation
+    if (!data || typeof data !== 'object' || !data.orderData) {
+      functions.logger.error('Invalid order data structure');
+      throw new functions.https.HttpsError(
+        'invalid-argument',
+        'Invalid order data format'
       );
     }
 
     const { orderData } = data;
-    
-    // Input validation
-    if (!orderData || typeof orderData !== 'object') {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Invalid order data'
-      );
-    }
+    const requiredFields = [
+      'email', 'firstName', 'lastName', 
+      'items', 'total', 'transactionId',
+      'address', 'city', 'state', 'phone'
+    ];
 
-    const requiredFields = ['email', 'firstName', 'lastName', 'items', 'total', 'transactionId'];
     for (const field of requiredFields) {
       if (!orderData[field]) {
+        functions.logger.error(`Missing required field: ${field}`);
         throw new functions.https.HttpsError(
           'invalid-argument',
           `Missing required field: ${field}`
@@ -52,49 +70,56 @@ exports.sendOrderConfirmation = functions
     }
 
     if (!Array.isArray(orderData.items) || orderData.items.length === 0) {
+      functions.logger.error('Empty items array');
       throw new functions.https.HttpsError(
         'invalid-argument',
         'Order must contain at least one item'
       );
     }
 
-    // Generate HTML email template
+    // Process order items
     const itemsHtml = orderData.items.map(item => `
       <tr>
-        <td style="padding: 8px; border: 1px solid #ddd;">${item.name}</td>
-        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
-        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">₦${item.price.toLocaleString()}</td>
-        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">₦${(item.price * item.quantity).toLocaleString()}</td>
+        <td style="padding: 12px; border: 1px solid #e0e0e0;">${item.name}</td>
+        <td style="padding: 12px; border: 1px solid #e0e0e0; text-align: center;">${item.quantity}</td>
+        <td style="padding: 12px; border: 1px solid #e0e0e0; text-align: right;">₦${item.price.toLocaleString()}</td>
+        <td style="padding: 12px; border: 1px solid #e0e0e0; text-align: right;">₦${(item.price * item.quantity).toLocaleString()}</td>
       </tr>
     `).join('');
 
+    // Email template
     const htmlTemplate = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-        <div style="background-color: #4B0082; padding: 20px; color: white;">
-          <h1 style="margin: 0;">BOGI NOIRE</h1>
-          <p style="margin: 5px 0 0; font-size: 18px;">Order Confirmation</p>
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #333;">
+        <!-- Header -->
+        <div style="background-color: #4B0082; padding: 25px; color: white; text-align: center;">
+          <h1 style="margin: 0; font-weight: 300;">BOGI NOIRE</h1>
+          <p style="margin: 8px 0 0; font-size: 18px; letter-spacing: 1px;">ORDER CONFIRMATION</p>
         </div>
         
-        <div style="padding: 20px;">
-          <p>Hello ${orderData.firstName},</p>
-          <p>Thank you for your order! Here are your details:</p>
+        <!-- Content -->
+        <div style="padding: 25px; background-color: #fafafa;">
+          <p style="font-size: 16px;">Hello ${orderData.firstName},</p>
+          <p style="font-size: 16px; line-height: 1.6;">Thank you for your order! We're preparing your items and will notify you when they ship.</p>
           
-          <h3 style="margin-bottom: 5px;">Shipping Information</h3>
-          <p>
-            ${orderData.firstName} ${orderData.lastName}<br>
-            ${orderData.address}<br>
-            ${orderData.city}, ${orderData.state}<br>
-            ${orderData.lga}<br>
-            Phone: ${orderData.phone}
-          </p>
+          <!-- Shipping Info -->
+          <div style="margin: 25px 0; padding: 20px; background-color: white; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <h3 style="margin-top: 0; color: #4B0082;">SHIPPING INFORMATION</h3>
+            <p style="margin: 8px 0;">
+              <strong>${orderData.firstName} ${orderData.lastName}</strong><br>
+              ${orderData.address}<br>
+              ${orderData.city}, ${orderData.state}<br>
+              Phone: ${orderData.phone}
+            </p>
+          </div>
           
-          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <!-- Order Items -->
+          <table style="width: 100%; border-collapse: collapse; margin: 25px 0; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
             <thead>
-              <tr style="background-color: #f3f3f3;">
-                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Item</th>
-                <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Qty</th>
-                <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">Price</th>
-                <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">Subtotal</th>
+              <tr style="background-color: #f5f5f5;">
+                <th style="padding: 12px; text-align: left; border: 1px solid #e0e0e0;">ITEM</th>
+                <th style="padding: 12px; text-align: center; border: 1px solid #e0e0e0;">QTY</th>
+                <th style="padding: 12px; text-align: right; border: 1px solid #e0e0e0;">PRICE</th>
+                <th style="padding: 12px; text-align: right; border: 1px solid #e0e0e0;">SUBTOTAL</th>
               </tr>
             </thead>
             <tbody>
@@ -102,38 +127,57 @@ exports.sendOrderConfirmation = functions
             </tbody>
           </table>
           
-          <div style="text-align: right; font-size: 16px;">
-            <p><strong>Total: ₦${orderData.total.toLocaleString()}</strong></p>
+          <!-- Order Total -->
+          <div style="text-align: right; margin-bottom: 25px;">
+            <p style="font-size: 18px; font-weight: bold;">
+              ORDER TOTAL: ₦${orderData.total.toLocaleString()}
+            </p>
           </div>
           
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-            <p><strong>Order #:</strong> ${orderData.transactionId.slice(0, 8)}</p>
-            <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+          <!-- Order Details -->
+          <div style="padding: 20px; background-color: white; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <h3 style="margin-top: 0; color: #4B0082;">ORDER DETAILS</h3>
+            <p style="margin: 8px 0;"><strong>Order Number:</strong> ${orderData.transactionId.slice(0, 8).toUpperCase()}</p>
+            <p style="margin: 8px 0;"><strong>Date:</strong> ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            ${orderData.instructions ? `<p style="margin: 8px 0;"><strong>Special Instructions:</strong> ${orderData.instructions}</p>` : ''}
           </div>
           
-          <p style="margin-top: 30px;">
-            We'll notify you when your order ships.<br>
-            Contact <a href="mailto:gracejunkie20@gmail.com" style="color: #4B0082;">gracejunkie20@gmail.com</a> with questions.
+          <!-- Footer -->
+          <p style="margin-top: 30px; font-size: 15px; line-height: 1.6; color: #666;">
+            Need help? Contact us at <a href="mailto:gracejunkie20@gmail.com" style="color: #4B0082; text-decoration: none;">gracejunkie20@gmail.com</a> or call +234 123 456 7890.
           </p>
         </div>
       </div>
     `;
 
     try {
-      // Send customer confirmation email
+      const mailTransport = configureMailTransport();
+      const dateString = new Date().toISOString().split('T')[0];
+
+      // Send customer confirmation
       await mailTransport.sendMail({
         from: `BOGI NOIRE <${process.env.GMAIL_EMAIL}>`,
         to: orderData.email,
-        subject: `Your Order Confirmation #${orderData.transactionId.slice(0, 8)}`,
+        subject: `Your Order #${orderData.transactionId.slice(0, 8)} Confirmation`,
         html: htmlTemplate,
+        attachments: [{
+          filename: `invoice-${dateString}.html`,
+          content: htmlTemplate,
+          contentType: 'text/html'
+        }]
       });
 
-      // Optionally send admin notification
+      // Send admin notification
       await mailTransport.sendMail({
-        from: `BOGI NOIRE <${process.env.GMAIL_EMAIL}>`,
+        from: `BOGI NOIRE Orders <${process.env.GMAIL_EMAIL}>`,
         to: 'bukunmiodugbesans@gmail.com',
-        subject: `New Order #${orderData.transactionId.slice(0, 8)}`,
+        subject: `[ADMIN] New Order #${orderData.transactionId.slice(0, 8)}`,
         html: htmlTemplate.replace('Hello', 'New order from'),
+        attachments: [{
+          filename: `order-${dateString}.html`,
+          content: htmlTemplate,
+          contentType: 'text/html'
+        }]
       });
 
       // Save to Firestore
@@ -142,37 +186,208 @@ exports.sendOrderConfirmation = functions
         customerEmail: orderData.email,
         customerName: `${orderData.firstName} ${orderData.lastName}`,
         items: orderData.items.map(item => ({
+          id: item.id || null,
           name: item.name,
           price: item.price,
           quantity: item.quantity,
           imageUrl: item.imageUrl || '',
+          brand: item.brand || null
         })),
         total: orderData.total,
+        subtotal: orderData.subtotal || orderData.total,
+        shippingFee: orderData.shippingFee || 0,
         transactionId: orderData.transactionId,
         status: 'paid',
+        paymentMethod: orderData.paymentMethod || 'unknown',
         shippingAddress: {
           name: `${orderData.firstName} ${orderData.lastName}`,
           street: orderData.address,
           city: orderData.city,
           state: orderData.state,
-          lga: orderData.lga,
-          phone: orderData.phone,
+          lga: orderData.lga || '',
+          phone: orderData.phone
         },
         specialInstructions: orderData.instructions || '',
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
 
+      functions.logger.log('Order processed successfully', { orderId: orderRef.id });
       return { 
         success: true,
-        orderId: orderRef.id 
+        orderId: orderRef.id,
+        transactionId: orderData.transactionId
       };
+
     } catch (error) {
-      console.error('Order processing error:', error);
+      functions.logger.error('Order processing failed', { error });
       throw new functions.https.HttpsError(
         'internal',
-        'Unable to process your order',
-        { debugMessage: error.message }
+        'Order processing failed',
+        {
+          errorDetails: error.message,
+          stackTrace: error.stack
+        }
       );
     }
   });
-  
+
+// ========================
+// CONTACT FORM FUNCTION
+// ========================
+exports.sendContactEmail = functions
+  .runWith({
+    secrets: ['GMAIL_EMAIL', 'GMAIL_PASSWORD'],
+    timeoutSeconds: 30,
+    memory: '512MB'
+  })
+  .https.onCall(async (data, context) => {
+    functions.logger.log('Contact form submission received', { data });
+
+    // Input validation
+    const requiredFields = ['name', 'email', 'message'];
+    const missingFields = requiredFields.filter(field => !data[field]);
+    
+    if (missingFields.length > 0) {
+      functions.logger.error('Missing required fields', { missingFields });
+      throw new functions.https.HttpsError(
+        'invalid-argument',
+        `Missing required fields: ${missingFields.join(', ')}`
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      functions.logger.error('Invalid email format', { email: data.email });
+      throw new functions.https.HttpsError(
+        'invalid-argument',
+        'Please provide a valid email address'
+      );
+    }
+
+    // Prepare email content
+    const contactHtml = `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #333;">
+        <!-- Header -->
+        <div style="background-color: #4B0082; padding: 25px; color: white; text-align: center;">
+          <h1 style="margin: 0; font-weight: 300;">BOGI NOIRE</h1>
+          <p style="margin: 8px 0 0; font-size: 18px; letter-spacing: 1px;">NEW CONTACT MESSAGE</p>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 25px; background-color: #fafafa;">
+          <h3 style="margin-top: 0; color: #4B0082;">CONTACT DETAILS</h3>
+          <p style="margin: 12px 0;"><strong>Name:</strong> ${data.name}</p>
+          <p style="margin: 12px 0;"><strong>Email:</strong> <a href="mailto:${data.email}">${data.email}</a></p>
+          ${data.phone ? `<p style="margin: 12px 0;"><strong>Phone:</strong> <a href="tel:${data.phone}">${data.phone}</a></p>` : ''}
+          
+          <h3 style="color: #4B0082; margin-top: 25px;">MESSAGE</h3>
+          <div style="background-color: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            ${data.message.replace(/\n/g, '<br>')}
+          </div>
+          
+          <p style="margin-top: 25px; font-size: 14px; color: #666;">
+            Received at: ${new Date().toLocaleString('en-US', { 
+              weekday: 'short', 
+              year: 'numeric', 
+              month: 'short', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </p>
+        </div>
+      </div>
+    `;
+
+    const confirmationHtml = `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #333;">
+        <!-- Header -->
+        <div style="background-color: #4B0082; padding: 25px; color: white; text-align: center;">
+          <h1 style="margin: 0; font-weight: 300;">BOGI NOIRE</h1>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 25px; background-color: #fafafa;">
+          <p style="font-size: 16px;">Hello ${data.name.split(' ')[0]},</p>
+          <p style="font-size: 16px; line-height: 1.6;">Thank you for contacting BOGI NOIRE! We've received your message and will respond within 24-48 hours.</p>
+          
+          <div style="margin: 25px 0; padding: 20px; background-color: white; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <h3 style="margin-top: 0; color: #4B0082;">YOUR MESSAGE</h3>
+            <div style="padding: 15px; background-color: #f9f9f9; border-radius: 3px;">
+              ${data.message.replace(/\n/g, '<br>')}
+            </div>
+          </div>
+          
+          <p style="font-size: 16px; line-height: 1.6;">
+            For urgent inquiries, please call us at <a href="tel:+2341234567890" style="color: #4B0082; text-decoration: none;">+234 123 456 7890</a>.
+          </p>
+          
+          <p style="margin-top: 30px; font-size: 15px; color: #666;">
+            This is an automated message. Please do not reply directly to this email.
+          </p>
+        </div>
+      </div>
+    `;
+
+    try {
+      const mailTransport = configureMailTransport();
+      const timestamp = new Date().toISOString();
+
+      // Send to admin
+      await mailTransport.sendMail({
+        from: `BOGI NOIRE Contact Form <${process.env.GMAIL_EMAIL}>`,
+        to: 'okwuchidavida@gmail.com',
+        subject: `New Contact: ${data.name}`,
+        html: contactHtml,
+        attachments: [{
+          filename: `contact-${timestamp}.html`,
+          content: contactHtml,
+          contentType: 'text/html'
+        }]
+      });
+
+      // Send confirmation to user
+      await mailTransport.sendMail({
+        from: `BOGI NOIRE <${process.env.GMAIL_EMAIL}>`,
+        to: data.email,
+        subject: 'We Received Your Message',
+        html: confirmationHtml
+      });
+
+      // Save to Firestore
+      const contactRef = await firestore.collection('contactSubmissions').add({
+        name: data.name,
+        email: data.email,
+        phone: data.phone || null,
+        message: data.message,
+        ipAddress: context.rawRequest.ip || null,
+        userAgent: context.rawRequest.get('user-agent') || null,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        status: 'new',
+        handled: false
+      });
+
+      functions.logger.log('Contact form processed successfully', { contactId: contactRef.id });
+      return {
+        success: true,
+        submissionId: contactRef.id
+      };
+
+    } catch (error) {
+      functions.logger.error('Contact form processing failed', { 
+        error: error.message,
+        stack: error.stack
+      });
+
+      throw new functions.https.HttpsError(
+        'internal',
+        'Failed to process contact form',
+        {
+          errorCode: error.code,
+          errorMessage: error.message
+        }
+      );
+    }
+  });

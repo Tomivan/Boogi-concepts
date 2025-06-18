@@ -1,33 +1,71 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { 
-  doc, 
-  onSnapshot, 
-  updateDoc, 
-  arrayRemove 
-} from 'firebase/firestore';
+import { doc, onSnapshot, getDoc, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import { getCart, syncCart, mergeCarts, clearFirebaseCart } from '../firebase/cartService';
 
 const CartContext = createContext();
+
+// Helper function to ensure price is always a number
+const parsePrice = (price) => {
+  if (typeof price === 'number') return price;
+  const numericValue = parseFloat(String(price).replace(/[^0-9.]/g, ''));
+  return isNaN(numericValue) ? 0 : numericValue;
+};
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Handle auth state changes
+  // Firebase operations
+  const getCart = async (userId) => {
+    const cartRef = doc(db, 'carts', userId);
+    const cartSnap = await getDoc(cartRef);
+    return cartSnap.exists() ? (cartSnap.data().items || []).map(item => ({
+      ...item,
+      price: parsePrice(item.price || item.Price) // Normalize price
+    })) : [];
+  };
+
+  const syncCart = async (userId, items) => {
+    const cartRef = doc(db, 'carts', userId);
+    await updateDoc(cartRef, { items });
+  };
+
+  const mergeCarts = async (userId, localItems) => {
+    const serverItems = await getCart(userId);
+    const mergedItems = [...serverItems];
+    
+    localItems.forEach(localItem => {
+      const existingIndex = mergedItems.findIndex(
+        item => item.id === localItem.id || 
+        (item.Name === localItem.Name && item['Brand Name'] === localItem['Brand Name'])
+      );
+      
+      if (existingIndex >= 0) {
+        mergedItems[existingIndex].quantity += localItem.quantity;
+      } else {
+        mergedItems.push({
+          ...localItem,
+          price: parsePrice(localItem.price || localItem.Price) // Normalize price
+        });
+      }
+    });
+    
+    await syncCart(userId, mergedItems);
+    return mergedItems;
+  };
+
+  // Auth and cart sync
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       try {
         if (user) {
           setUserId(user.uid);
-          // Load user's cart from Firestore
           const serverCart = await getCart(user.uid);
           const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
           
           if (localCart.length > 0) {
-            // Merge local cart with server cart
             await mergeCarts(user.uid, localCart);
             const mergedCart = await getCart(user.uid);
             setCartItems(mergedCart);
@@ -37,12 +75,11 @@ export const CartProvider = ({ children }) => {
           }
         } else {
           setUserId(null);
-          // Fall back to localStorage when logged out
           const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
           setCartItems(localCart);
         }
       } catch (error) {
-        console.error('Error handling auth state change:', error);
+        console.error('Auth state error:', error);
       } finally {
         setLoading(false);
       }
@@ -50,113 +87,52 @@ export const CartProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  // Sync cart changes to appropriate storage
-  useEffect(() => {
-    if (!cartItems.length || loading) return;
-
-    const syncData = async () => {
-      try {
-        if (userId) {
-          await syncCart(userId, cartItems);
-        } else {
-          localStorage.setItem('cart', JSON.stringify(cartItems));
-        }
-      } catch (error) {
-        console.error('Error syncing cart:', error);
-      }
-    };
-
-    const debounceTimer = setTimeout(() => {
-      syncData();
-    }, 500);
-
-    return () => clearTimeout(debounceTimer);
-  }, [cartItems, userId, loading]);
-
-  // Real-time cart updates for logged-in users
-  useEffect(() => {
-    if (!userId || loading) return;
-
-    const cartRef = doc(db, 'carts', userId);
-    const unsubscribe = onSnapshot(cartRef, (doc) => {
-      if (doc.exists()) {
-        setCartItems(doc.data().items || []);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [userId, loading]);
-
-  const addToCart = async (product) => {
+  // Cart operations
+  const addToCart = (product) => {
     setCartItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
+      const productId = product.id || `${product.Name}-${product['Brand Name']}`;
+      const normalizedProduct = {
+        ...product,
+        id: productId,
+        price: parsePrice(product.price || product.Price), // Ensure numeric price
+        quantity: 1
+      };
+
+      const existingItem = prevItems.find(item => item.id === productId);
       if (existingItem) {
         return prevItems.map(item =>
-          item.id === product.id 
-            ? { ...item, quantity: item.quantity + 1 } 
+          item.id === productId
+            ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
-      return [...prevItems, { ...product, quantity: 1 }];
+      return [...prevItems, normalizedProduct];
     });
   };
-  
-  const removeFromCart = async (productId) => {
-    if (userId) {
-      try {
-        const cartRef = doc(db, 'carts', userId);
-        await updateDoc(cartRef, {
-          items: arrayRemove(...cartItems.filter(item => item.id === productId))
-        });
-      } catch (error) {
-        console.error('Error removing item:', error);
-      }
-    } else {
-      setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
-    }
-  };
-  
-  const clearCart = async () => {
-    try {
-      if (userId) {
-        await clearFirebaseCart(userId);
-      } else {
-        localStorage.removeItem('cart');
-        setCartItems([]);
-      }
-    } catch (error) {
-      console.error('Error clearing cart:', error);
-    }
+
+  const removeFromCart = (productId) => {
+    setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
   };
 
-  const updateQuantity = async (productId, newQuantity) => {
+  const updateQuantity = (productId, newQuantity) => {
     if (newQuantity < 1) {
       removeFromCart(productId);
       return;
     }
-
-    // Optimistic update
     setCartItems(prevItems =>
       prevItems.map(item =>
         item.id === productId ? { ...item, quantity: newQuantity } : item
       )
     );
-
-    // Sync with Firebase if logged in
-    if (userId) {
-      try {
-        await syncCart(userId, cartItems);
-      } catch (error) {
-        console.error('Error updating quantity:', error);
-        // Revert if sync fails
-        const originalCart = await getCart(userId);
-        setCartItems(originalCart);
-      }
-    }
   };
 
+  const clearCart = () => {
+    setCartItems([]);
+  };
+
+  // Derived values
   const cartTotal = cartItems.reduce(
-    (total, item) => total + item.price * item.quantity,
+    (total, item) => total + (item.price * item.quantity),
     0
   );
 
@@ -183,10 +159,4 @@ export const CartProvider = ({ children }) => {
   );
 };
 
-export const useCart = () => {
-  const context = useContext(CartContext);
-  if (context === undefined) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
-  return context;
-};
+export const useCart = () => useContext(CartContext);

@@ -13,6 +13,7 @@ import OrderCompleted from "./completed";
 import MyOrders from "./my-orders";
 import ProtectedRoute from "../components/ProtectedRoute";
 import { useAuth } from "../context/AuthContext";
+import Contact from "./contact-form";
 
 const Pages = () => {
   const { currentUser } = useAuth();
@@ -29,6 +30,7 @@ const Pages = () => {
       <Route path="/women" element={<Women />} />
       <Route path="/product-details" element={<ProductDetailsPage />} />
       <Route path="/cart" element={<ShoppingCart />} />
+      <Route path="/contact-us" element={<Contact />} />
       
       <Route path="/checkout" element={
         <ProtectedRoute>
