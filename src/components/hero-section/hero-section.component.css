@@ -1,10 +1,7 @@
 .carousel {
-    margin-top: 5%;
+    margin-top: 3%;
     width: 97vw;
 }
-/* .width {
-    width: 98vw;
-} */
 .carousel-item::after {
     content: "";
     position: absolute;

@@ -2,7 +2,7 @@
     margin-top: 3%;
 }
 .heading {
-    margin-bottom: 3%;
+    margin-bottom: 2%;
 }
 .perfumes {
     display: flex;
@@ -17,11 +17,14 @@
 }
 .shop .perfume {
     width: 15vw;
+    height: 40vh;
     margin-right: 2%;
+    border: 1px solid #0000001e;
+    padding: 1em;
 }
 .perfume img {
-    height: 30vh;
-    width: 15vw;
+    height: 25vh;
+    width: 12vw;
     margin-bottom: 4%;
 }
 .add-to-cart{
