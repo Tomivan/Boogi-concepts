@@ -1,12 +1,12 @@
 import React from 'react';
 import Completed from '../components/completed/completed.component';
 import Footer from '../components/footer/footer.component';
-import Navbar from '../components/navbar/navbar.component';
+import NavbarComponent from '../components/navbar/navbar.component';
 
 const OrderCompleted = () => {
     return(
         <div className='component'>
-            <Navbar />
+            <NavbarComponent />
             <Completed />
             <Footer />
         </div>

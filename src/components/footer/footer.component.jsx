@@ -16,7 +16,11 @@ const Footer = () => {
                     <h3>Fragrances</h3>
                     <Link to="/men" className='footer-link'><p> Men </p></Link>
                     <Link to="/women" className='footer-link'><p>Women</p></Link>
+                </div>
+                <div className="footer-middle">
+                    <h3>Customer Support</h3>
                     <Link to="/contact-us" className="footer-link"><p>Contact Form</p></Link>
+                    <p> +2347068899614</p>
                 </div>
                 <div className="footer-right">
                     <h3>Contact Us</h3>
@@ -32,6 +36,14 @@ const Footer = () => {
                         <Link to="https://wa.me/07068899614" target='_blank'>
                             <FontAwesomeIcon icon={faTwitter} className='social-icon' />
                         </Link>
+                    </div>
+                </div>
+                <div className="footer-subcribe">
+                    <h3>BoogiTips & Trends</h3>
+                    <p>Join our exclusive community to <br /> enjoy latest updates on niche fragrance, <br/> skincare, and makeup brands.</p>
+                    <div className="column">
+                        <input type='text' placeholder='Enter your email address' />
+                        <button className='subscribe'>Subscribe</button>
                     </div>
                 </div>
             </div>

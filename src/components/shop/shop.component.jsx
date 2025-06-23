@@ -19,7 +19,7 @@ const Shop = () => {
                 const menQuery = query(
                     collection(db, 'products'),
                     where('Gender', '==', 'Male'),
-                    limit(5) // Get only first 4 documents
+                    limit(10)
                 );
                 const menSnapshot = await getDocs(menQuery);
                 const menProductsData = menSnapshot.docs.map(doc => ({
@@ -31,7 +31,7 @@ const Shop = () => {
                 const womenQuery = query(
                     collection(db, 'products'),
                     where('Gender', '==', 'Female'),
-                    limit(5) // Get only first 4 documents
+                    limit(10) 
                 );
                 const womenSnapshot = await getDocs(womenQuery);
                 const womenProductsData = womenSnapshot.docs.map(doc => ({

@@ -1,13 +1,13 @@
 import React from 'react';
-import Navbar from '../components/navbar/navbar.component';
 import Cart from '../components/cart/cart.component';
 import ContactUs from '../components/contact-us/contact-us.component';
 import Footer from '../components/footer/footer.component';
+import NavbarComponent from '../components/navbar/navbar.component';
 
 const ShoppingCart = () => {
     return(
         <div className='component'>
-            <Navbar />
+            <NavbarComponent />
             <Cart />
             <ContactUs />
             <Footer />

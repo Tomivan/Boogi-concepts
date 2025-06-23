@@ -19,13 +19,18 @@
     text-decoration: none;
     color: #ffffff;
 }
-.footer-left {
-    width: 50%;
-}
 .social-icon {
     padding: 1em;
     color: #ffd700;
     background: #4b0082;
     border-radius: 50%;
     margin-right: 2%;
+}
+.subscribe {
+    width: 10vw;
+    margin-top: 2%;
+}
+.column{
+    display: flex;
+    flex-direction: column;
 }
