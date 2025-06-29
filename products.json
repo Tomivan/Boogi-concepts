@@ -1,22 +1,62 @@
 {
     "products": {
       "product1": {
-        "name": "Antonio Banderas",
+        "name": "Angham",
         "price": 35000,
         "image": "perfume.jpg"
       },
       "product2": {
-        "name": "Chanel No. 5",
+        "name": "Eclaire Lattafa",
         "price": 45000,
         "image": "perfume.jpg"
       },
       "product3": {
-        "name": "Dior Sauvage",
+        "name": "Club de nuit woman",
         "price": 55000,
         "image": "perfume.jpg"
       },
       "product4": {
-        "name": "Versace Eros",
+        "name": "Asad Bourbon",
+        "price": 40000,
+        "image": "perfume.jpg"
+      },
+      "product5": {
+        "name": "Yves Saint Laurent",
+        "price": 40000,
+        "image": "perfume.jpg"
+      },
+      "product6": {
+        "name": "Al Dirgham Limited Edition",
+        "price": 40000,
+        "image": "perfume.jpg"
+      },
+      "product7": {
+        "name": "Opulent Red",
+        "price": 40000,
+        "image": "perfume.jpg"
+      },
+      "product8": {
+        "name": "Oud Al Faris",
+        "price": 40000,
+        "image": "perfume.jpg"
+      },
+      "product9": {
+        "name": "Andaleeb Asdaaf",
+        "price": 40000,
+        "image": "perfume.jpg"
+      },
+      "product10": {
+        "name": "Ana Abiyedh",
+        "price": 40000,
+        "image": "perfume.jpg"
+      },
+      "product11": {
+        "name": "Eternal Oud",
+        "price": 40000,
+        "image": "perfume.jpg"
+      },
+      "product12": {
+        "name": "Khair Confection",
         "price": 40000,
         "image": "perfume.jpg"
       }

@@ -7,6 +7,7 @@
 .perfumes {
     display: flex;
     flex-wrap: wrap;
+    width: 100%;
 }
 .perfume {
     width: 18vw;
@@ -16,16 +17,60 @@
     font-size: 12px;
 }
 .shop .perfume {
-    width: 15vw;
-    height: 40vh;
-    margin-right: 2%;
+    min-width: calc(22% - 15px);
+    height: auto;
+    margin-right: 1.5%;
     margin-bottom: 2%;
-    border: 1px solid #0000001e;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: center;
+    transition: transform 0.3s ease;
     padding: 1em;
 }
+.perfume-carousel-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+.carousel-arrow {
+  background: #4b0082;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.carousel-arrow:hover {
+  background: #f5f5f5;
+}
+
+.carousel-arrow:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.left-arrow {
+  margin-right: 15px;
+}
+
+.right-arrow {
+  margin-left: 15px;
+}
+.perfume-carousel-container .perfume {
+  min-width: calc(22% - 15px); 
+  text-align: center;
+  height: auto;
+}
 .perfume img {
-    height: 25vh;
-    width: 12vw;
+    height: 20vh;
+    width: 10vw;
     margin-bottom: 4%;
 }
 .add-to-cart{
