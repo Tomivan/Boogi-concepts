@@ -33,9 +33,7 @@ h2{
 
 @media screen and (max-width: 767px) {
     .carousel {
-        margin-top: 50%;
         width: 90vw;
-        margin-left: 2%;
     }
     .width{
         width: 90vw;

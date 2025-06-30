@@ -34,6 +34,7 @@
 }
 .remove p {
     color: #4b0082;
+    cursor: pointer;
 }
 .minus, .plus {
     background: #4b0082;
@@ -48,10 +49,16 @@ cursor: pointer;
 .counter p {
     padding: 0 1em;
 }
-.total {
-    text-align: right;
-}
 .checkout {
+    width: 12vw;
+    margin-top: 3%;
+    float: right;
+}
+.total-actions {
+    display: flex;
+    justify-content: space-between;
+}
+.clear-cart{
     width: 12vw;
 }
 
@@ -59,7 +66,17 @@ cursor: pointer;
     .cart-h1 {
         margin-top: 40%;
     }
-    .checkout {
+    .clear-cart {
         width: 25vw;
+    }
+    .checkout {
+        width: 45vw;
+        margin-top: 8%;
+    }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+    .checkout, .clear-cart {
+        width: 20vw;
     }
 }

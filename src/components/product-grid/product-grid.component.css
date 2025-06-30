@@ -112,3 +112,14 @@
         flex-direction: column;
     }
 }
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+    .add-to-cart {
+        width: 25vw;
+    }
+    .pagination-controls{
+      margin-left: -35%;
+    }
+    .pagination-button {
+      width: 15vw;
+    }
+}

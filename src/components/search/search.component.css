@@ -40,22 +40,29 @@
 
 @media screen and (max-width: 767px) {
     .search {
-        margin: 50% 0 0 0;
+        margin-top: 15%;
         flex-direction: column;
+    }
+    .search-input {
+        width: 85vw;
+        margin-left: -30%;
     }
     .search-button {
         margin-top: 3%;
         width: 50vw;
     }
     .search-icon{
-        left: 10%;
-        top: 30%;
+        left: -20%;
+        padding-top: 1em;
     }
 }
 
 @media screen and (min-width: 768px) and (max-width: 1023px) {
     .search {
-        margin-top: 10%;
+        margin: 10% 0 0 5%;
+    }
+    .search-input {
+        width: 70vw;
     }
     .search-button {
         width: 15vw;

@@ -34,3 +34,21 @@
     display: flex;
     flex-direction: column;
 }
+
+@media screen and (max-width: 767px) {
+    .footer-top{
+        flex-wrap: wrap;
+    }
+    .subscribe {
+        width: 40vw;
+    }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+    .footer-top {
+        flex-wrap: wrap;
+    }
+    .subscribe {
+        width: 20vw;
+    }
+}

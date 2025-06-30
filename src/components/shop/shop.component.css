@@ -91,18 +91,36 @@
     }
     .shop .perfume {
         width: 60vw;
+        margin-left: 5%;
+    }
+    .gender .perfume {
+        width: 80vw;
     }
     .perfume img {
-        width: 60vw;
+        width: 50vw;
         margin-bottom:  0;
     }
     .perfume p {
         font-size: 16px;
     }
+    .add-to-cart {
+        width: 40vw;
+    }
 }
 
 @media screen and (min-width: 768px) and (max-width: 1023px) {
-    .perfume, .perfume img, .shop .perfume {
+    .perfume, .shop .perfume {
+        width: 35vw;
+    }
+    .perfume img {
+        width: 30vw;
+    }
+    .gender .perfume {
         width: 40vw;
+        margin-left: 5%;
+    }
+    .perfume {
+        height: auto;
+        margin-bottom: 3%;
     }
 }

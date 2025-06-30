@@ -45,11 +45,14 @@ textarea{
     .delivery {
         flex-direction: column;
     }
+    .delivery-form input, .delivery-form textarea, .delivery-form select {
+        width: 80vw;
+    }
     .place-order {
         width: 70vw;
     }
     .billing-summary {
-        width: 70vw;
+        width: 80vw;
         margin-top: 5%;
     }
 }

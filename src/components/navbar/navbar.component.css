@@ -23,10 +23,61 @@ li {
 .move-left {
     margin-left: 10%;
 }
+.user-dropdown {
+  position: relative;
+  display: inline-block;
+}
 .user-welcome {
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
     display: flex;
     align-items: center;
-    gap: 15px;
+}
+.user-welcome:hover {
+  background-color: #f5f5f5;
+}
+
+.order-badge {
+  background-color: #4B0082;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: white;
+  min-width: 200px;
+  box-shadow: 0px 8px 16px rgba(0,0,0,0.1);
+  z-index: 1;
+  border-radius: 4px;
+  padding: 10px 0;
+}
+
+.dropdown-content a, .dropdown-content button {
+  display: block;
+  padding: 8px 16px;
+  text-decoration: none;
+  color: #333;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.dropdown-content a:hover, .dropdown-content button:hover {
+  background-color: #f5f5f5;
+}
+
+.user-dropdown:hover .dropdown-content {
+  display: block;
 }
 .logout-button {
     background: none;
@@ -41,4 +92,17 @@ li {
 .logout-button:hover {
     background: #4B0082;
     color: white;
+}
+
+
+@media screen  and (max-width: 1023px) {
+    .navbar-toggler {
+        width: 15vw;
+    }
+    .navbar-nav {
+        background: #ffffff;
+        padding: 1em !important;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
 }

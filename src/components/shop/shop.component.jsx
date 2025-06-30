@@ -149,7 +149,6 @@ const Shop = () => {
                         <p>
                         &#8358; {(product.Price || product.price).toLocaleString()}
                         </p>
-                        <button className="add-to-cart"> Add to Cart</button>
                     </div>
                     ))}
                 </div>
@@ -163,7 +162,7 @@ const Shop = () => {
                 </button>
                 </div>
             </section>
-            <section className="section">
+            <section className="section gender">
                 <div className="heading">
                     <h2>Men's Perfume</h2>
                     <Link to='/men' className='link'>View all</Link>
@@ -182,7 +181,7 @@ const Shop = () => {
                     ))}
                 </div>
             </section>
-            <section className="section">
+            <section className="section gender">
                 <div className="heading">
                     <h2>Women's Perfume</h2>
                     <Link to='/women' className='link'>View all</Link>

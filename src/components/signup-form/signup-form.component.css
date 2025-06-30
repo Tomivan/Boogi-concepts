@@ -49,6 +49,7 @@ button {
 .logo {
     font-family: 'Playfair Display';
     font-size: 36px;
+    cursor: pointer;
 }
 
 @media screen and (max-width: 767px) {

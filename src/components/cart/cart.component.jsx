@@ -72,7 +72,7 @@ const Cart = () => {
         </section>
       ))}
       
-      <section className='total'>
+      <section className='cart-total'>
         <div className="total-actions">
           <button className='clear-cart' onClick={clearCart}>
             Clear Cart

@@ -9,3 +9,14 @@
     padding: 1em;
     color: #25d366;
 }
+
+@media screen and (max-width: 767px) {
+    .contact-us {
+        margin-top: 30%;
+    }
+}
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+    .contact-us {
+        margin-top: 20%;
+    }
+}

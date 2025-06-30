@@ -9,6 +9,7 @@
 @media screen and (max-width: 767px) {
   .brand{
     width: 90vw;
+    margin-left: 5%;
   }   
   .checkbox {
     margin-right: 3%;
@@ -18,5 +19,11 @@
 @media screen and (min-width: 768px) and (max-width: 1023px) {
    .brand {
     width: 100%;
+   }
+   .brand label {
+    margin-left: 3%;
+   }
+   .flex {
+    margin-bottom: 3%;
    }
 }

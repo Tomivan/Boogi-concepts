@@ -5,7 +5,6 @@ import { auth, db } from '../firebase';
 
 const CartContext = createContext();
 
-// Helper function to ensure price is always a number
 const parsePrice = (price) => {
   if (typeof price === 'number') return price;
   const numericValue = parseFloat(String(price).replace(/[^0-9.]/g, ''));
@@ -17,19 +16,30 @@ export const CartProvider = ({ children }) => {
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Universal save function
+  const saveCart = async (items) => {
+    try {
+      if (userId) {
+        // Save to Firestore
+        const cartRef = doc(db, 'carts', userId);
+        await updateDoc(cartRef, { items });
+      } else {
+        // Save to localStorage
+        localStorage.setItem('cart', JSON.stringify(items));
+      }
+    } catch (error) {
+      console.error('Error saving cart:', error);
+    }
+  };
+
   // Firebase operations
   const getCart = async (userId) => {
     const cartRef = doc(db, 'carts', userId);
     const cartSnap = await getDoc(cartRef);
     return cartSnap.exists() ? (cartSnap.data().items || []).map(item => ({
       ...item,
-      price: parsePrice(item.price || item.Price) // Normalize price
+      price: parsePrice(item.price || item.Price)
     })) : [];
-  };
-
-  const syncCart = async (userId, items) => {
-    const cartRef = doc(db, 'carts', userId);
-    await updateDoc(cartRef, { items });
   };
 
   const mergeCarts = async (userId, localItems) => {
@@ -47,12 +57,12 @@ export const CartProvider = ({ children }) => {
       } else {
         mergedItems.push({
           ...localItem,
-          price: parsePrice(localItem.price || localItem.Price) // Normalize price
+          price: parsePrice(localItem.price || localItem.Price)
         });
       }
     });
     
-    await syncCart(userId, mergedItems);
+    await saveCart(mergedItems);
     return mergedItems;
   };
 
@@ -66,8 +76,7 @@ export const CartProvider = ({ children }) => {
           const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
           
           if (localCart.length > 0) {
-            await mergeCarts(user.uid, localCart);
-            const mergedCart = await getCart(user.uid);
+            const mergedCart = await mergeCarts(user.uid, localCart);
             setCartItems(mergedCart);
             localStorage.removeItem('cart');
           } else {
@@ -87,6 +96,17 @@ export const CartProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
+  // Sync cart changes
+  useEffect(() => {
+    if (loading || cartItems.length === 0) return;
+    
+    const debounceTimer = setTimeout(() => {
+      saveCart(cartItems);
+    }, 500);
+    
+    return () => clearTimeout(debounceTimer);
+  }, [cartItems, userId, loading]);
+
   // Cart operations
   const addToCart = (product) => {
     setCartItems(prevItems => {
@@ -94,40 +114,50 @@ export const CartProvider = ({ children }) => {
       const normalizedProduct = {
         ...product,
         id: productId,
-        price: parsePrice(product.price || product.Price), // Ensure numeric price
+        price: parsePrice(product.price || product.Price),
         quantity: 1
       };
 
       const existingItem = prevItems.find(item => item.id === productId);
-      if (existingItem) {
-        return prevItems.map(item =>
-          item.id === productId
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
-      return [...prevItems, normalizedProduct];
+      const newItems = existingItem
+        ? prevItems.map(item =>
+            item.id === productId
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          )
+        : [...prevItems, normalizedProduct];
+
+      return newItems;
     });
   };
 
   const removeFromCart = (productId) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
+    setCartItems(prevItems => {
+      const newItems = prevItems.filter(item => item.id !== productId);
+      return newItems;
+    });
   };
 
   const updateQuantity = (productId, newQuantity) => {
-    if (newQuantity < 1) {
-      removeFromCart(productId);
-      return;
-    }
-    setCartItems(prevItems =>
-      prevItems.map(item =>
+    setCartItems(prevItems => {
+      if (newQuantity < 1) {
+        const newItems = prevItems.filter(item => item.id !== productId);
+        return newItems;
+      }
+      return prevItems.map(item =>
         item.id === productId ? { ...item, quantity: newQuantity } : item
-      )
-    );
+      );
+    });
   };
 
   const clearCart = () => {
     setCartItems([]);
+    if (userId) {
+      const cartRef = doc(db, 'carts', userId);
+      updateDoc(cartRef, { items: [] });
+    } else {
+      localStorage.removeItem('cart');
+    }
   };
 
   // Derived values
@@ -159,4 +189,10 @@ export const CartProvider = ({ children }) => {
   );
 };
 
-export const useCart = () => useContext(CartContext);
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (context === undefined) {
+    throw new Error('useCart must be used within a CartProvider');
+  }
+  return context;
+};

@@ -6,19 +6,28 @@ import Navbar from 'react-bootstrap/Navbar';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFemale, faHome, faMale, faShoppingBag } from '@fortawesome/free-solid-svg-icons';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '../../firebase';
+import { auth, db } from '../../firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useCart } from '../../context/CartContext';
 import './navbar.component.css';
 
 const NavbarComponent = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [orderCount, setOrderCount] = useState(0);
   const navigate = useNavigate();
   const { cartCount } = useCart();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        // Fetch user's order count
+        const ordersRef = collection(db, 'orders');
+        const q = query(ordersRef, where('userId', '==', currentUser.uid));
+        const querySnapshot = await getDocs(q);
+        setOrderCount(querySnapshot.size);
+      }
       setLoading(false);
     });
     return () => unsubscribe();
@@ -70,12 +79,22 @@ const NavbarComponent = () => {
               </Nav>
                <div className="right">
                   {user ? (
-                    <div className="user-welcome">
-                      <span>Welcome, {user.displayName || user.email.split('@')[0]}</span>
-                      <button onClick={handleLogout} className="logout-button">Logout</button>
+                    <div className="user-dropdown">
+                      <span className="user-welcome">
+                        Welcome, {user.displayName || user.email.split('@')[0]}
+                        {orderCount > 0 && (
+                          <span className="order-badge">{orderCount}</span>
+                        )}
+                      </span>
+                      <div className="dropdown-content">
+                        <Link to="/my-orders">My Orders ({orderCount})</Link>
+                        <button onClick={handleLogout} className="logout-button">
+                          Logout
+                        </button>
+                      </div>
                     </div>
                   ) : (
-                    <Link to='/login' className='login-link'>Login</Link>
+                    <Link to="/login" className="login-link">Login</Link>
                   )}
                 </div>
             </Navbar.Collapse>
