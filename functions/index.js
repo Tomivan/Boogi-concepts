@@ -22,6 +22,43 @@ const configureMailTransport = () => {
   });
 };
 
+exports.initializeShippingFees = functions.https.onCall(async (data, context) => {
+  // Verify admin privileges
+  if (!context.auth || !context.auth.token.admin) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'Only admins can initialize shipping fees'
+    );
+  }
+
+  const defaultShippingFees = {
+    'default': 5000,
+    'abule egba, iyana ipaja, ikotun, igando, lasu, agege, berger, ketu': 4000,
+    'maruwa, lekki, ikate, chisco': 3500,
+    'iyanaworo, gbagada, bariga': 3000,
+    'mushin, oshodi, yaba, surulere, illupeju, maryland, ikeja': 2500,
+    'sangotedo, abraham adesanya, ogombo, ibeju lekki': 5000,
+    'osapa, agungi, jakande, ilasan, salem': 3000,
+    'ajah': 4000,
+    'victoria island': 2500,
+    'ikota, oral estate, eleganza, vgc, chevron, orchid, egbon': 5000
+  };
+
+  try {
+    await admin.firestore()
+      .doc('config/shippingFees')
+      .set({ areas: defaultShippingFees });
+    
+    return { success: true, message: 'Shipping fees initialized' };
+  } catch (error) {
+    throw new functions.https.HttpsError(
+      'internal',
+      'Failed to initialize shipping fees',
+      error.message
+    );
+  }
+});
+
 // ========================
 // ORDER CONFIRMATION FUNCTION
 // ========================
@@ -144,7 +181,7 @@ exports.sendOrderConfirmation = functions
           
           <!-- Footer -->
           <p style="margin-top: 30px; font-size: 15px; line-height: 1.6; color: #666;">
-            Need help? Contact us at <a href="mailto:gracejunkie20@gmail.com" style="color: #4B0082; text-decoration: none;">gracejunkie20@gmail.com</a> or call +234 123 456 7890.
+            Need help? Contact us at <a href="mailto:okwuchidavida@gmail.com" style="color: #4B0082; text-decoration: none;">okwuchidavida@gmail.com</a> or call 07068899614.
           </p>
         </div>
       </div>
@@ -170,7 +207,7 @@ exports.sendOrderConfirmation = functions
       // Send admin notification
       await mailTransport.sendMail({
         from: `BOGI NOIRE Orders <${process.env.GMAIL_EMAIL}>`,
-        to: 'bukunmiodugbesans@gmail.com',
+        to: 'okwuchidavida@gmail.com',
         subject: `[ADMIN] New Order #${orderData.transactionId.slice(0, 8)}`,
         html: htmlTemplate.replace('Hello', 'New order from'),
         attachments: [{

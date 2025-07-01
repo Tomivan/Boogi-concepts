@@ -14,9 +14,10 @@ import MyOrders from "./my-orders";
 import ProtectedRoute from "../components/ProtectedRoute";
 import { useAuth } from "../context/AuthContext";
 import Contact from "./contact-form";
+import AdminShippingEditor from "../components/admin/adminShippingEditor"; 
 
 const Pages = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
 
   return (
     <Routes>
@@ -47,6 +48,12 @@ const Pages = () => {
       <Route path="/my-orders" element={
         <ProtectedRoute>
           <MyOrders />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/admin/shipping" element={
+        <ProtectedRoute>
+          {isAdmin ? <AdminShippingEditor /> : <Home />}
         </ProtectedRoute>
       } />
     </Routes>

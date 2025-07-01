@@ -1,26 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import { PaystackButton } from 'react-paystack';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../../firebase';
 import './delivery.component.css';
-
-const LOCAL_GOV_SHIPPING_FEES = {
-  'abule egba, iyana ipaja, ikotun, igando, lasu, agege, berger, ketu': 4000,
-  'maruwa, lekki, ikate, chisco': 3500,
-  'iyanaworo, gbagada, bariga': 3000,
-  'mushin, oshodi, yaba, surulere, illupeju, maryland, ikeja': 2500,
-  'sangotedo, abraham adesanya, ogombo, ibeju lekki': 5000,
-  'osapa, agungi, jakande, ilasan, salem': 3000,
-  'ajah': 4000,
-  'victoria island': 2500,
-  'ikota, oral estate, eleganza, vgc, chevron, orchid, egbon': 5000,
-  'default': 5000
-};
 
 const Delivery = () => {
   const navigate = useNavigate();
   const { cartItems, cartTotal, clearCart } = useCart();
+  const { isAdmin } = useAuth();
   const functions = getFunctions();
   
   const [formData, setFormData] = useState({
@@ -36,18 +27,46 @@ const Delivery = () => {
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [shippingFees, setShippingFees] = useState({});
+  const [loadingFees, setLoadingFees] = useState(true);
+
+  // Fetch shipping fees from Firestore
+  useEffect(() => {
+    const unsubscribe = onSnapshot(doc(db, 'config', 'shippingFees'), (doc) => {
+      if (doc.exists()) {
+        setShippingFees(doc.data().areas || {});
+      } else {
+        // Fallback to default fees if not configured
+        setShippingFees({
+          'abule egba, iyana ipaja, ikotun, igando, lasu, agege, berger, ketu': 4000,
+          'maruwa, lekki, ikate, chisco': 3500,
+          'iyanaworo, gbagada, bariga': 3000,
+          'mushin, oshodi, yaba, surulere, illupeju, maryland, ikeja': 2500,
+          'sangotedo, abraham adesanya, ogombo, ibeju lekki': 5000,
+          'osapa, agungi, jakande, ilasan, salem': 3000,
+          'ajah': 4000,
+          'victoria island': 2500,
+          'ikota, oral estate, eleganza, vgc, chevron, orchid, egbon': 5000,
+          'default': 5000
+        });
+      }
+      setLoadingFees(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const calculateShippingFee = (lga) => {
-    if (!lga) return 0;
-    const matchedKey = Object.keys(LOCAL_GOV_SHIPPING_FEES).find(key => 
+    if (!lga || loadingFees) return 0;
+    const matchedKey = Object.keys(shippingFees).find(key => 
       key.toLowerCase().includes(lga.toLowerCase())
     );
-    return matchedKey ? LOCAL_GOV_SHIPPING_FEES[matchedKey] : LOCAL_GOV_SHIPPING_FEES.default;
+    return matchedKey ? shippingFees[matchedKey] : (shippingFees.default || 5000);
   };
 
   const redirectToHomepage = () => {
-    navigate("/")
-  }
+    navigate("/");
+  };
 
   const shippingFee = calculateShippingFee(formData.lga);
   const grandTotal = (cartTotal + shippingFee) * 100; // Paystack uses kobo
@@ -65,25 +84,26 @@ const Delivery = () => {
       const orderData = {
         ...formData,
         items: cartItems.map(item => ({
-          name: item.name,
-          price: item.price,
+          name: item.Name || item.name,
+          price: item.Price || item.price,
           quantity: item.quantity,
-          imageUrl: item.imageUrl
+          imageUrl: item.ImageUrl || item.image
         })),
         total: cartTotal + shippingFee,
-        transactionId: transaction.reference
+        transactionId: transaction.reference,
+        shippingFee: shippingFee
       };
   
-      const result = await sendOrderConfirmation({ orderData });
+      await sendOrderConfirmation({ orderData });
       
       clearCart();
       navigate('/order-completed', { 
         state: {
           cartItems: cartItems.map(item => ({
-            name: item.name,
-            price: item.price,
+            name: item.Name || item.name,
+            price: item.Price || item.price,
             quantity: item.quantity,
-            image: item.imageUrl  // Changed from imageUrl to image to match Completed component
+            image: item.ImageUrl || item.image
           })),
           cartTotal: cartTotal + shippingFee,
           orderId: transaction.reference,
@@ -109,8 +129,7 @@ const Delivery = () => {
     }
   };
 
-  const paystackConfig = 
-  {
+  const paystackConfig = {
     email: formData.email,
     amount: grandTotal,
     publicKey: process.env.REACT_APP_PAYSTACK_PUBLIC_KEY,
@@ -137,12 +156,31 @@ const Delivery = () => {
     }
   };
 
+  const areaOptions = Object.keys(shippingFees)
+    .filter(area => area !== 'default')
+    .map(area => (
+      <option key={area} value={area}>{area}</option>
+    ));
+
   return (
     <div className="component">
+      <div className="header-section">
         <div className="logo" onClick={redirectToHomepage}>
-            <span className='logo-purple'>BOOGI</span>
-            <span className='logo-gold'>NOIRE</span>
+          <span className='logo-purple'>BOOGI</span>
+          <span className='logo-gold'>NOIRE</span>
         </div>
+        {isAdmin && (
+          <div className="admin-link">
+            <button 
+              onClick={() => navigate('/admin/shipping')}
+              className="admin-button"
+            >
+              Admin Panel
+            </button>
+          </div>
+        )}
+      </div>
+      
       <div className="delivery">
         <form className="delivery-form" onSubmit={(e) => e.preventDefault()}>
           <h1 className='billing-heading'>Billing Details</h1>
@@ -209,32 +247,12 @@ const Delivery = () => {
               value={formData.lga}
               onChange={handleChange}
               required
+              disabled={loadingFees}
             >
               <option value="">Select your area</option>
-              <option value="Abule egba, iyana ipaja, ikotun, igando, lasu, agege, berger, ketu">
-                Abule Egba, Iyana Ipaja, Ikotun, Igando, LASU, Agege, Berger, Ketu
-              </option>
-              <option value="Maruwa, Lekki, Ikate, Chisco">
-                Maruwa, Lekki, Ikate, Chisco
-              </option>
-              <option value="Iyanaworo, Gbagada, Bariga">
-                Iyanaworo, Gbagada, Bariga
-              </option>
-              <option value="Mushin, Oshodi, Yaba, Surulere, Illupeju, Maryland, Ikeja">
-                Mushin, Oshodi, Yaba, Surulere, Illupeju, Maryland, Ikeja
-              </option>
-              <option value="Sangotedo, Abraham Adesanya, Ogombo, Ibeju Lekki">
-                Sangotedo, Abraham Adesanya, Ogombo, Ibeju Lekki
-              </option>
-              <option value="Osapa, Agungi, Jakande, Ilasan, Salem">
-                Osapa, Agungi, Jakande, Ilasan, Salem
-              </option>
-              <option value="Ajah">Ajah</option>
-              <option value="Victoria Island">Victoria Island</option>
-              <option value="Ikota, Oral Estate, Eleganza, VGC, Chevron, Orchid, Egbon">
-                Ikota, Oral Estate, Eleganza, VGC, Chevron, Orchid, Egbon
-              </option>
+              {areaOptions}
             </select>
+            {loadingFees && <p className="loading-text">Loading shipping options...</p>}
           </div>
 
           <div className="form-group">
@@ -272,7 +290,13 @@ const Delivery = () => {
           <PaystackButton 
             {...paystackConfig} 
             className="place-order"
-            disabled={!formData.email || !formData.lga || cartItems.length === 0 || isProcessing}
+            disabled={
+              !formData.email || 
+              !formData.lga || 
+              cartItems.length === 0 || 
+              isProcessing ||
+              loadingFees
+            }
           />
         </form>
 
@@ -284,12 +308,16 @@ const Delivery = () => {
           </div>
           <div className="total">
             <span>Shipping ({formData.lga ? 'Selected' : 'Not selected'})</span>
-            <span>₦{shippingFee.toLocaleString()}</span>
+            <span>
+              {loadingFees ? 'Loading...' : `₦${shippingFee.toLocaleString()}`}
+            </span>
           </div>
           <hr />
           <div className="total">
             <span>Total</span>
-            <span>₦{(cartTotal + shippingFee).toLocaleString()}</span>
+            <span>
+              {loadingFees ? 'Calculating...' : `₦${(cartTotal + shippingFee).toLocaleString()}`}
+            </span>
           </div>
         </div>
       </div>
