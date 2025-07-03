@@ -26,6 +26,7 @@ li {
 .user-dropdown {
   position: relative;
   display: inline-block;
+  padding-left: 2em;
 }
 .user-welcome {
     cursor: pointer;
@@ -104,5 +105,16 @@ li {
         padding: 1em !important;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        position: relative;
+        z-index: 100;
     }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+  .navbar-toggler{
+    margin-left: 50%;
+  }
+  .right {
+    margin-left: 30%;
+  }
 }

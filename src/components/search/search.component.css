@@ -40,7 +40,7 @@
 
 @media screen and (max-width: 767px) {
     .search {
-        margin-top: 15%;
+        margin-top: 25%;
         flex-direction: column;
     }
     .search-input {
@@ -59,7 +59,7 @@
 
 @media screen and (min-width: 768px) and (max-width: 1023px) {
     .search {
-        margin: 10% 0 0 5%;
+        margin: 15% 0 0 5%;
     }
     .search-input {
         width: 70vw;

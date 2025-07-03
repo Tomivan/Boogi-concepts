@@ -21,6 +21,7 @@ const Footer = () => {
                     <h3>Customer Support</h3>
                     <Link to="/contact-us" className="footer-link"><p>Contact Form</p></Link>
                     <p> +2347068899614</p>
+                    <p>+2348137551483</p>
                 </div>
                 <div className="footer-right">
                     <h3>Contact Us</h3>
@@ -38,7 +39,7 @@ const Footer = () => {
                         </Link>
                     </div>
                 </div>
-                <div className="footer-subcribe">
+                <div className="footer-subscribe">
                     <h3>BoogiTips & Trends</h3>
                     <p>Join our exclusive community to <br /> enjoy latest updates on niche fragrance, <br/> skincare, and makeup brands.</p>
                     <div className="column">

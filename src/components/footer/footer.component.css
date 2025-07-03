@@ -37,7 +37,10 @@
 
 @media screen and (max-width: 767px) {
     .footer-top{
-        flex-wrap: wrap;
+        flex-direction: column;
+    }
+    .footer-left, .footer-middle, .footer-right, .footer-subscribe {
+        margin-bottom: 5%;
     }
     .subscribe {
         width: 40vw;

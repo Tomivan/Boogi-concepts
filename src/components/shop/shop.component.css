@@ -91,6 +91,7 @@
     }
     .shop .perfume {
         width: 60vw;
+        height: 42vh;
         margin-left: 5%;
     }
     .gender .perfume {
@@ -98,6 +99,7 @@
     }
     .perfume img {
         width: 50vw;
+        height: 25vh;
         margin-bottom:  0;
     }
     .perfume p {

@@ -77,7 +77,8 @@ const NavbarComponent = () => {
                   Cart {cartCount > 0 && `(${cartCount})`}
                 </Nav.Link>
               </Nav>
-               <div className="right">
+            </Navbar.Collapse>
+            <div className="right">
                   {user ? (
                     <div className="user-dropdown">
                       <span className="user-welcome">
@@ -97,7 +98,6 @@ const NavbarComponent = () => {
                     <Link to="/login" className="login-link">Login</Link>
                   )}
                 </div>
-            </Navbar.Collapse>
           </Container>
         </Navbar>
   );

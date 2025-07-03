@@ -10,110 +10,133 @@ const Shop = () => {
     const [womenProducts, setWomenProducts] = useState([]);
     const [popularProducts, setPopularProducts] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [productsPerPage, setProductsPerPage] = useState(4); // Default value
     const carouselRef = useRef(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    const productsPerPage = 4;
-  
     const nextSlide = () => {
         if (currentIndex < popularProducts.length - productsPerPage) {
-        setCurrentIndex(currentIndex + 1);
+            setCurrentIndex(currentIndex + 1);
         }
     };
     
     const prevSlide = () => {
         if (currentIndex > 0) {
-        setCurrentIndex(currentIndex - 1);
+            setCurrentIndex(currentIndex - 1);
         }
     };
 
     useEffect(() => {
-    const fetchProducts = async () => {
-        try {
-            setLoading(true);
+        // Check screen size and set productsPerPage accordingly
+        const handleResize = () => {
+            if (window.matchMedia('(max-width: 767px)').matches) {
+                setProductsPerPage(1);
+            } else if (window.matchMedia('(min-width: 767px) and (max-width: 1023px)').matches) {
+                setProductsPerPage(2);
+            } else {
+                setProductsPerPage(4);
+            }
+        };
 
-            // Fetch popular perfumes
-            const popularQuery = query(
-                collection(db, 'popularPerfumes'),
-                orderBy('rank')
-            );
-            const popularSnapshot = await getDocs(popularQuery);
-            const popularData = await Promise.all(
-                popularSnapshot.docs.map(async doc => {
-                    const perfumeRef = doc.data().perfumeRef;
-                    
-                    if (!perfumeRef || typeof perfumeRef !== 'object' || !perfumeRef.path) {
-                        console.warn('Invalid perfumeRef in popular perfume:', doc.id);
-                        return null;
-                    }
-                    
-                    try {
-                        const perfumeSnap = await getDoc(perfumeRef);
-                        return perfumeSnap.exists() ? {
-                            id: perfumeSnap.id,
-                            ...perfumeSnap.data()
-                        } : null;
-                    } catch (error) {
-                        console.error('Error fetching perfume:', error);
-                        return null;
-                    }
-                })
-            );
-            
-            // Fetch men's perfumes - fixed collection name to 'mensPerfumes'
-            const menQuery = query(
-                collection(db, 'mensPerfume'), // Changed from 'mensPerfume'
-                orderBy('rank')
-            );
-            const menSnapshot = await getDocs(menQuery);
-            const menProductsData = await Promise.all(
-                menSnapshot.docs.map(async doc => {
-                    const perfumeRef = doc.data().perfumeRef;
-                    
-                    if (!perfumeRef || typeof perfumeRef !== 'object' || !perfumeRef.path) {
-                        console.warn('Invalid perfumeRef in mens perfume:', doc.id);
-                        return null;
-                    }
-                    
-                    try {
-                        const perfumeSnap = await getDoc(perfumeRef);
-                        return perfumeSnap.exists() ? {
-                            id: perfumeSnap.id,
-                            ...perfumeSnap.data()
-                        } : null;
-                    } catch (error) {
-                        console.error('Error fetching perfume:', error);
-                        return null;
-                    }
-                })
-            );
-            
-            // Fetch women's perfumes
-            const womenQuery = query(
-                collection(db, 'products'),
-                where('Gender', '==', 'Female'),
-                limit(12) 
-            );
-            const womenSnapshot = await getDocs(womenQuery);
-            const womenProductsData = womenSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+        // Set initial value
+        handleResize();
 
-            // Filter out null products before setting state
-            setMenProducts(menProductsData.filter(product => product !== null));
-            setWomenProducts(womenProductsData);
-            setPopularProducts(popularData.filter(product => product !== null));
-            
-            setLoading(false);
-        } catch (error) {
-            console.error('Error fetching products:', error);
-            setLoading(false);
-        }
-    };
+        // Add event listener for window resize
+        window.addEventListener('resize', handleResize);
 
-    fetchProducts();
+        // Cleanup function
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                setLoading(true);
+
+                // Fetch popular perfumes
+                const popularQuery = query(
+                    collection(db, 'popularPerfumes'),
+                    orderBy('rank')
+                );
+                const popularSnapshot = await getDocs(popularQuery);
+                const popularData = await Promise.all(
+                    popularSnapshot.docs.map(async doc => {
+                        const perfumeRef = doc.data().perfumeRef;
+                        
+                        if (!perfumeRef || typeof perfumeRef !== 'object' || !perfumeRef.path) {
+                            console.warn('Invalid perfumeRef in popular perfume:', doc.id);
+                            return null;
+                        }
+                        
+                        try {
+                            const perfumeSnap = await getDoc(perfumeRef);
+                            return perfumeSnap.exists() ? {
+                                id: perfumeSnap.id,
+                                ...perfumeSnap.data()
+                            } : null;
+                        } catch (error) {
+                            console.error('Error fetching perfume:', error);
+                            return null;
+                        }
+                    })
+                );
+                
+                // Fetch men's perfumes - fixed collection name to 'mensPerfumes'
+                const menQuery = query(
+                    collection(db, 'mensPerfume'),
+                    orderBy('rank')
+                );
+                const menSnapshot = await getDocs(menQuery);
+                const menProductsData = await Promise.all(
+                    menSnapshot.docs.map(async doc => {
+                        const perfumeRef = doc.data().perfumeRef;
+                        
+                        if (!perfumeRef || typeof perfumeRef !== 'object' || !perfumeRef.path) {
+                            console.warn('Invalid perfumeRef in mens perfume:', doc.id);
+                            return null;
+                        }
+                        
+                        try {
+                            const perfumeSnap = await getDoc(perfumeRef);
+                            return perfumeSnap.exists() ? {
+                                id: perfumeSnap.id,
+                                ...perfumeSnap.data()
+                            } : null;
+                        } catch (error) {
+                            console.error('Error fetching perfume:', error);
+                            return null;
+                        }
+                    })
+                );
+                
+                // Fetch women's perfumes
+                const womenQuery = query(
+                    collection(db, 'products'),
+                    where('Gender', '==', 'Female'),
+                    limit(12) 
+                );
+                const womenSnapshot = await getDocs(womenQuery);
+                const womenProductsData = womenSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                // Filter out null products before setting state
+                setMenProducts(menProductsData.filter(product => product !== null));
+                setWomenProducts(womenProductsData);
+                setPopularProducts(popularData.filter(product => product !== null));
+                
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching products:', error);
+                setLoading(false);
+            }
+        };
+
+        fetchProducts();
     }, []);
 
     const redirectToProductDetail = (product) => {
