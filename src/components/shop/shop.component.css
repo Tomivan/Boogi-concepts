@@ -90,12 +90,9 @@
         margin-left: 20%;
     }
     .shop .perfume {
-        width: 60vw;
+        width: 62vw;
         height: 42vh;
-        margin-left: 5%;
-    }
-    .gender .perfume {
-        width: 80vw;
+        margin-left: 3%;
     }
     .perfume img {
         width: 50vw;
@@ -116,10 +113,6 @@
     }
     .perfume img {
         width: 30vw;
-    }
-    .gender .perfume {
-        width: 40vw;
-        margin-left: 5%;
     }
     .perfume {
         height: auto;

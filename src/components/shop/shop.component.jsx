@@ -9,34 +9,59 @@ const Shop = () => {
     const [menProducts, setMenProducts] = useState([]);
     const [womenProducts, setWomenProducts] = useState([]);
     const [popularProducts, setPopularProducts] = useState([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [productsPerPage, setProductsPerPage] = useState(4); // Default value
-    const carouselRef = useRef(null);
+    
+    // State for each carousel
+    const [currentIndices, setCurrentIndices] = useState({
+        popular: 0,
+        men: 0,
+        women: 0
+    });
+    
+    const [productsPerPage, setProductsPerPage] = useState({
+        popular: 4,
+        men: 4,
+        women: 4
+    }); 
+    
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    const nextSlide = () => {
-        if (currentIndex < popularProducts.length - productsPerPage) {
-            setCurrentIndex(currentIndex + 1);
+    const nextSlide = (section) => {
+        const products = 
+            section === 'popular' ? popularProducts : 
+            section === 'men' ? menProducts : 
+            womenProducts;
+            
+        if (currentIndices[section] < products.length - productsPerPage[section]) {
+            setCurrentIndices(prev => ({
+                ...prev,
+                [section]: prev[section] + 1
+            }));
         }
     };
     
-    const prevSlide = () => {
-        if (currentIndex > 0) {
-            setCurrentIndex(currentIndex - 1);
+    const prevSlide = (section) => {
+        if (currentIndices[section] > 0) {
+            setCurrentIndices(prev => ({
+                ...prev,
+                [section]: prev[section] - 1
+            }));
         }
     };
 
     useEffect(() => {
         // Check screen size and set productsPerPage accordingly
         const handleResize = () => {
-            if (window.matchMedia('(max-width: 767px)').matches) {
-                setProductsPerPage(1);
-            } else if (window.matchMedia('(min-width: 767px) and (max-width: 1023px)').matches) {
-                setProductsPerPage(2);
-            } else {
-                setProductsPerPage(4);
-            }
+            const newProductsPerPage = {
+                popular: window.matchMedia('(max-width: 767px)').matches ? 1 : 
+                        window.matchMedia('(min-width: 767px) and (max-width: 1023px)').matches ? 2 : 4,
+                men: window.matchMedia('(max-width: 767px)').matches ? 1 : 
+                     window.matchMedia('(min-width: 767px) and (max-width: 1023px)').matches ? 2 : 4,
+                women: window.matchMedia('(max-width: 767px)').matches ? 1 : 
+                       window.matchMedia('(min-width: 767px) and (max-width: 1023px)').matches ? 2 : 4
+            };
+            
+            setProductsPerPage(newProductsPerPage);
         };
 
         // Set initial value
@@ -143,6 +168,47 @@ const Shop = () => {
         navigate("/product-details", { state: { product } });
     };
 
+    const renderCarousel = (section, products) => {
+        return (
+            <div className="perfume-carousel-container">
+                <button 
+                    className="carousel-arrow left-arrow" 
+                    onClick={() => prevSlide(section)}
+                    disabled={currentIndices[section] === 0}
+                >
+                    <FaChevronLeft />
+                </button>
+                
+                <div className="perfumes">
+                    {products.slice(
+                        currentIndices[section], 
+                        currentIndices[section] + productsPerPage[section]
+                    ).map(product => (
+                        <div className="perfume" key={product.id}>
+                            <img 
+                                src={product.ImageUrl || product.image} 
+                                alt={product.Name || product.name} 
+                                onClick={() => redirectToProductDetail(product)}
+                            />
+                            <p>{product.Name || product.name}</p>
+                            <p>
+                                &#8358; {(product.Price || product.price).toLocaleString()}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+                
+                <button 
+                    className="carousel-arrow right-arrow" 
+                    onClick={() => nextSlide(section)}
+                    disabled={currentIndices[section] >= products.length - productsPerPage[section]}
+                >
+                    <FaChevronRight />
+                </button>
+            </div>
+        );
+    };
+
     if (loading) {
         return <div className="loading">Loading products...</div>;
     }
@@ -151,77 +217,23 @@ const Shop = () => {
         <div className="shop">
             <section className="section">
                 <h2>Most Popular</h2>
-                <div className="perfume-carousel-container">
-                <button 
-                    className="carousel-arrow left-arrow" 
-                    onClick={prevSlide}
-                    disabled={currentIndex === 0}
-                >
-                    <FaChevronLeft />
-                </button>
-                
-                <div className="perfumes" ref={carouselRef}>
-                    {popularProducts.slice(currentIndex, currentIndex + productsPerPage).map(product => (
-                    <div className="perfume" key={product.id}>
-                        <img 
-                        src={product.ImageUrl || product.image} 
-                        alt={product.Name || product.name} 
-                        onClick={() => redirectToProductDetail(product)}
-                        />
-                        <p>{product.Name || product.name}</p>
-                        <p>
-                        &#8358; {(product.Price || product.price).toLocaleString()}
-                        </p>
-                    </div>
-                    ))}
-                </div>
-                
-                <button 
-                    className="carousel-arrow right-arrow" 
-                    onClick={nextSlide}
-                    disabled={currentIndex >= popularProducts.length - productsPerPage}
-                >
-                    <FaChevronRight />
-                </button>
-                </div>
+                {renderCarousel('popular', popularProducts)}
             </section>
+            
             <section className="section gender">
                 <div className="heading">
                     <h2>Men's Perfume</h2>
                     <Link to='/men' className='link'>View all</Link>
                 </div>
-                <div className='perfumes'>
-                    {menProducts.map(product => (
-                        <div className="perfume" key={product.id}>
-                            <img 
-                                src={product.ImageUrl || product.image} 
-                                alt={product.Name || product.name} 
-                                onClick={() => redirectToProductDetail(product)}
-                            />
-                            <p>{product.Name || product.name}</p>
-                            <p>&#8358; {(product.Price || product.price).toLocaleString()}</p>
-                        </div>
-                    ))}
-                </div>
+                {renderCarousel('men', menProducts)}
             </section>
+            
             <section className="section gender">
                 <div className="heading">
                     <h2>Women's Perfume</h2>
                     <Link to='/women' className='link'>View all</Link>
                 </div>
-                <div className='perfumes'>
-                    {womenProducts.map(product => (
-                        <div className="perfume" key={product.id}>
-                            <img 
-                                src={product.ImageUrl || product.image} 
-                                alt={product.Name || product.name} 
-                                onClick={() => redirectToProductDetail(product)}
-                            />
-                            <p>{product.Name || product.name}</p>
-                            <p>&#8358; {(product.Price || product.price).toLocaleString()}</p>
-                        </div>
-                    ))}
-                </div>
+                {renderCarousel('women', womenProducts)}
             </section>
         </div>
     );
