@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
+import './admin-shipping-editor.css';
 
 const AdminShippingEditor = () => {
   const [areas, setAreas] = useState({});
@@ -80,7 +81,7 @@ const AdminShippingEditor = () => {
           value={newFee}
           onChange={(e) => setNewFee(Number(e.target.value))}
         />
-        <button onClick={addNewArea}>Add Area</button>
+        <button onClick={addNewArea} className='add-area-button'>Add Area</button>
       </div>
       
       <div className="areas-list">

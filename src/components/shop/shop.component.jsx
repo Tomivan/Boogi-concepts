@@ -1,14 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { collection, getDocs, query, where, limit, orderBy, getDoc } from 'firebase/firestore';
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
+import { collection, getDocs, query, where, limit, orderBy, getDoc, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { FaChevronLeft, FaChevronRight, FaPlus, FaTimes, FaEdit } from 'react-icons/fa';
 import { db } from '../../firebase';
 import './shop.component.css';
 
+const ADMIN_EMAILS = ['okwuchidavida@gmail.com'];
 const Shop = () => {
     const [menProducts, setMenProducts] = useState([]);
     const [womenProducts, setWomenProducts] = useState([]);
     const [popularProducts, setPopularProducts] = useState([]);
+    const [allProducts, setAllProducts] = useState([]); // For admin to select from
+    const [selectedProduct, setSelectedProduct] = useState('');
+    const [selectedSection, setSelectedSection] = useState('popular');
+    const { currentUser } = useAuth();
+
+    const isAdmin = currentUser && ADMIN_EMAILS.includes(currentUser.email);
     
     // State for each carousel
     const [currentIndices, setCurrentIndices] = useState({
@@ -24,6 +32,7 @@ const Shop = () => {
     }); 
     
     const [loading, setLoading] = useState(true);
+    const [adminMode, setAdminMode] = useState(false);
     const navigate = useNavigate();
 
     const nextSlide = (section) => {
@@ -50,7 +59,6 @@ const Shop = () => {
     };
 
     useEffect(() => {
-        // Check screen size and set productsPerPage accordingly
         const handleResize = () => {
             const newProductsPerPage = {
                 popular: window.matchMedia('(max-width: 767px)').matches ? 1 : 
@@ -64,16 +72,9 @@ const Shop = () => {
             setProductsPerPage(newProductsPerPage);
         };
 
-        // Set initial value
         handleResize();
-
-        // Add event listener for window resize
         window.addEventListener('resize', handleResize);
-
-        // Cleanup function
-        return () => {
-            window.removeEventListener('resize', handleResize);
-        };
+        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     useEffect(() => {
@@ -81,79 +82,50 @@ const Shop = () => {
             try {
                 setLoading(true);
 
+                // Fetch all products for admin selection
+                const allProductsQuery = query(collection(db, 'products'));
+                const allProductsSnapshot = await getDocs(allProductsQuery);
+                const allProductsData = allProductsSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setAllProducts(allProductsData);
+
                 // Fetch popular perfumes
-                const popularQuery = query(
-                    collection(db, 'popularPerfumes'),
-                    orderBy('rank')
-                );
+                const popularQuery = query(collection(db, 'popularPerfumes'), orderBy('rank'));
                 const popularSnapshot = await getDocs(popularQuery);
                 const popularData = await Promise.all(
                     popularSnapshot.docs.map(async doc => {
                         const perfumeRef = doc.data().perfumeRef;
-                        
-                        if (!perfumeRef || typeof perfumeRef !== 'object' || !perfumeRef.path) {
-                            console.warn('Invalid perfumeRef in popular perfume:', doc.id);
-                            return null;
-                        }
-                        
-                        try {
-                            const perfumeSnap = await getDoc(perfumeRef);
-                            return perfumeSnap.exists() ? {
-                                id: perfumeSnap.id,
-                                ...perfumeSnap.data()
-                            } : null;
-                        } catch (error) {
-                            console.error('Error fetching perfume:', error);
-                            return null;
-                        }
+                        if (!perfumeRef?.path) return null;
+                        const perfumeSnap = await getDoc(perfumeRef);
+                        return perfumeSnap.exists() ? { id: perfumeSnap.id, ...perfumeSnap.data() } : null;
                     })
                 );
                 
-                // Fetch men's perfumes - fixed collection name to 'mensPerfumes'
-                const menQuery = query(
-                    collection(db, 'mensPerfume'),
-                    orderBy('rank')
-                );
+                // Fetch men's perfumes
+                const menQuery = query(collection(db, 'mensPerfume'), orderBy('rank'));
                 const menSnapshot = await getDocs(menQuery);
                 const menProductsData = await Promise.all(
                     menSnapshot.docs.map(async doc => {
                         const perfumeRef = doc.data().perfumeRef;
-                        
-                        if (!perfumeRef || typeof perfumeRef !== 'object' || !perfumeRef.path) {
-                            console.warn('Invalid perfumeRef in mens perfume:', doc.id);
-                            return null;
-                        }
-                        
-                        try {
-                            const perfumeSnap = await getDoc(perfumeRef);
-                            return perfumeSnap.exists() ? {
-                                id: perfumeSnap.id,
-                                ...perfumeSnap.data()
-                            } : null;
-                        } catch (error) {
-                            console.error('Error fetching perfume:', error);
-                            return null;
-                        }
+                        if (!perfumeRef?.path) return null;
+                        const perfumeSnap = await getDoc(perfumeRef);
+                        return perfumeSnap.exists() ? { id: perfumeSnap.id, ...perfumeSnap.data() } : null;
                     })
                 );
                 
                 // Fetch women's perfumes
-                const womenQuery = query(
-                    collection(db, 'products'),
-                    where('Gender', '==', 'Female'),
-                    limit(12) 
-                );
+                const womenQuery = query(collection(db, 'products'), where('Gender', '==', 'Female'), limit(12));
                 const womenSnapshot = await getDocs(womenQuery);
                 const womenProductsData = womenSnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
 
-                // Filter out null products before setting state
-                setMenProducts(menProductsData.filter(product => product !== null));
+                setMenProducts(menProductsData.filter(Boolean));
                 setWomenProducts(womenProductsData);
-                setPopularProducts(popularData.filter(product => product !== null));
-                
+                setPopularProducts(popularData.filter(Boolean));
                 setLoading(false);
             } catch (error) {
                 console.error('Error fetching products:', error);
@@ -166,6 +138,95 @@ const Shop = () => {
 
     const redirectToProductDetail = (product) => {
         navigate("/product-details", { state: { product } });
+    };
+
+    const addToSection = async (section) => {
+        if (!selectedProduct) return;
+        
+        try {
+            const productRef = doc(db, 'products', selectedProduct);
+            const rank = section === 'popular' ? popularProducts.length + 1 : 
+                         section === 'men' ? menProducts.length + 1 : 
+                         womenProducts.length + 1;
+            
+            // Add to the appropriate collection
+            const sectionCollection = 
+                section === 'popular' ? 'popularPerfumes' : 
+                section === 'men' ? 'mensPerfume' : 
+                'womensPerfume';
+            
+            await setDoc(doc(db, sectionCollection, selectedProduct), {
+                perfumeRef: productRef,
+                rank: rank
+            });
+            
+            // Refresh the products
+            const productSnap = await getDoc(productRef);
+            const productData = productSnap.data();
+            
+            if (section === 'popular') {
+                setPopularProducts(prev => [...prev, { id: selectedProduct, ...productData }]);
+            } else if (section === 'men') {
+                setMenProducts(prev => [...prev, { id: selectedProduct, ...productData }]);
+            } else {
+                setWomenProducts(prev => [...prev, { id: selectedProduct, ...productData }]);
+            }
+            
+            setSelectedProduct('');
+        } catch (error) {
+            console.error('Error adding to section:', error);
+        }
+    };
+
+    const removeFromSection = async (section, productId) => {
+        try {
+            // Remove from the appropriate collection
+            const sectionCollection = 
+                section === 'popular' ? 'popularPerfumes' : 
+                section === 'men' ? 'mensPerfume' : 
+                'womensPerfume';
+            
+            await deleteDoc(doc(db, sectionCollection, productId));
+            
+            // Update state
+            if (section === 'popular') {
+                setPopularProducts(prev => prev.filter(p => p.id !== productId));
+            } else if (section === 'men') {
+                setMenProducts(prev => prev.filter(p => p.id !== productId));
+            } else {
+                setWomenProducts(prev => prev.filter(p => p.id !== productId));
+            }
+        } catch (error) {
+            console.error('Error removing from section:', error);
+        }
+    };
+
+    const renderAdminControls = (section) => {
+        if (!isAdmin || !adminMode) return null;
+        
+        return (
+            <div className="admin-controls">
+                <select 
+                    value={selectedProduct}
+                    onChange={(e) => setSelectedProduct(e.target.value)}
+                    className='admin-select'
+                >
+                    <option value="">Select a product</option>
+                    {allProducts.map(product => (
+                        <option key={product.id} value={product.id}>
+                            {product.Name || product.name}
+                        </option>
+                    ))}
+                </select>
+                <button 
+                    onClick={() => addToSection(section)}
+                    disabled={!selectedProduct}
+                    className="add-button"
+                >
+                    <FaPlus /> Add to {section}
+                </button>
+            </div>
+        );
     };
 
     const renderCarousel = (section, products) => {
@@ -185,15 +246,21 @@ const Shop = () => {
                         currentIndices[section] + productsPerPage[section]
                     ).map(product => (
                         <div className="perfume" key={product.id}>
+                            {adminMode && (
+                                <div 
+                                    className="remove-button"
+                                    onClick={() => removeFromSection(section, product.id)}
+                                >
+                                    <FaTimes />
+                                </div>
+                            )}
                             <img 
                                 src={product.ImageUrl || product.image} 
                                 alt={product.Name || product.name} 
                                 onClick={() => redirectToProductDetail(product)}
                             />
                             <p>{product.Name || product.name}</p>
-                            <p>
-                                &#8358; {(product.Price || product.price).toLocaleString()}
-                            </p>
+                            <p>&#8358; {(product.Price || product.price).toLocaleString()}</p>
                         </div>
                     ))}
                 </div>
@@ -215,8 +282,17 @@ const Shop = () => {
 
     return (
         <div className="shop">
+            {isAdmin && (
+                <div className="admin-mode-toggle">
+                    <button onClick={() => setAdminMode(!adminMode)} className="admin-mode">
+                        <FaEdit /> {adminMode ? 'Exit Admin Mode' : 'Enter Admin Mode'}
+                    </button>
+                </div>
+            )}
+            
             <section className="section">
                 <h2>Most Popular</h2>
+                {renderAdminControls('popular')}
                 {renderCarousel('popular', popularProducts)}
             </section>
             
@@ -225,6 +301,7 @@ const Shop = () => {
                     <h2>Men's Perfume</h2>
                     <Link to='/men' className='link'>View all</Link>
                 </div>
+                {renderAdminControls('men')}
                 {renderCarousel('men', menProducts)}
             </section>
             
@@ -233,6 +310,7 @@ const Shop = () => {
                     <h2>Women's Perfume</h2>
                     <Link to='/women' className='link'>View all</Link>
                 </div>
+                {renderAdminControls('women')}
                 {renderCarousel('women', womenProducts)}
             </section>
         </div>

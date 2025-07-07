@@ -38,15 +38,15 @@ const Delivery = () => {
       } else {
         // Fallback to default fees if not configured
         setShippingFees({
-          'abule egba, iyana ipaja, ikotun, igando, lasu, agege, berger, ketu': 4000,
-          'maruwa, lekki, ikate, chisco': 3500,
-          'iyanaworo, gbagada, bariga': 3000,
-          'mushin, oshodi, yaba, surulere, illupeju, maryland, ikeja': 2500,
-          'sangotedo, abraham adesanya, ogombo, ibeju lekki': 5000,
-          'osapa, agungi, jakande, ilasan, salem': 3000,
-          'ajah': 4000,
-          'victoria island': 2500,
-          'ikota, oral estate, eleganza, vgc, chevron, orchid, egbon': 5000,
+          'abule egba, iyana ipaja, ikotun, igando, lasu, agege, berger, ketu': 5000,
+          'maruwa, lekki, ikate, chisco': 7000,
+          'iyanaworo, gbagada, bariga': 5000,
+          'mushin, oshodi, yaba, surulere, illupeju, maryland, ikeja': 4500,
+          'sangotedo, abraham adesanya, ogombo, ibeju lekki': 10000,
+          'osapa, agungi, jakande, ilasan, salem': 7500,
+          'ajah': 9000,
+          'victoria island': 6500,
+          'ikota, oral estate, eleganza, vgc, chevron, orchid, egbon': 8000,
           'default': 5000
         });
       }
