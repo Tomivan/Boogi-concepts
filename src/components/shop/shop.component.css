@@ -102,6 +102,9 @@
 }
 
 @media screen and (max-width: 767px) {
+    .admin-mode{
+        width: 50vw;
+    }
     .perfumes {
         flex-direction: column;
     }
