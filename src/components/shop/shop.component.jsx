@@ -259,8 +259,8 @@ const Shop = () => {
                                 alt={product.Name || product.name} 
                                 onClick={() => redirectToProductDetail(product)}
                             />
-                            <p>{product.Name || product.name}</p>
-                            <p>&#8358; {(product.Price || product.price).toLocaleString()}</p>
+                            <p className='perfume-name'>{product.Name || product.name}</p>
+                            <p className='price'>&#8358; {(product.Price || product.price).toLocaleString()}</p>
                         </div>
                     ))}
                 </div>

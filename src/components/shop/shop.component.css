@@ -66,12 +66,20 @@
 .perfume-carousel-container .perfume {
   min-width: calc(22% - 15px); 
   text-align: center;
-  height: auto;
+  height: 45vh;
+}
+.perfume-name {
+    margin-top: 5%;
+    font-size: 1.2em;
+}
+.price {
+    font-weight: bold;
+    font-size: 1.8em;
 }
 .perfume img {
     height: 20vh;
     width: 10vw;
-    margin-bottom: 4%;
+    margin: 4% 0;
 }
 .add-to-cart{
     width: 12vw;
