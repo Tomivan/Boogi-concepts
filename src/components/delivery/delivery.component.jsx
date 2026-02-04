@@ -1,16 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCart } from '../../context/CartContext';
+import { useCartStore } from '../../store/cartStore';
 import { useAuth } from '../../context/AuthContext';
 import { PaystackButton } from 'react-paystack';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { 
+  showSuccessAlert, 
+  showErrorAlert, 
+  showLoadingAlert, 
+  closeAlert 
+} from '../../utils/alert';
 import './delivery.component.css';
 
 const Delivery = () => {
   const navigate = useNavigate();
-  const { cartItems, cartTotal, clearCart } = useCart();
+  
+  const { 
+    cartItems, 
+    cartTotal, 
+    clearCart, 
+    loading: cartLoading 
+  } = useCartStore((state) => ({
+    cartItems: state.cartItems,
+    cartTotal: state.cartTotal,
+    clearCart: state.clearCart,
+    loading: state.loading
+  }));
+  
   const { isAdmin } = useAuth();
   const functions = getFunctions();
   
@@ -51,6 +69,12 @@ const Delivery = () => {
         });
       }
       setLoadingFees(false);
+    }, (error) => {
+      setLoadingFees(false);
+      showErrorAlert(
+        'Shipping Error', 
+        'Failed to load shipping fees. Using default rates.'
+      );
     });
 
     return () => unsubscribe();
@@ -69,7 +93,7 @@ const Delivery = () => {
   };
 
   const shippingFee = calculateShippingFee(formData.lga);
-  const grandTotal = (cartTotal + shippingFee) * 100; // Paystack uses kobo
+  const grandTotal = (cartTotal + shippingFee) * 100;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -78,6 +102,8 @@ const Delivery = () => {
 
   const processOrder = async (transaction) => {
     setIsProcessing(true);
+    showLoadingAlert('Processing Order', 'Please wait while we confirm your payment...');
+    
     try {
       const sendOrderConfirmation = httpsCallable(functions, 'sendOrderConfirmation');
       
@@ -96,34 +122,53 @@ const Delivery = () => {
   
       await sendOrderConfirmation({ orderData });
       
+      closeAlert();
       clearCart();
-      navigate('/order-completed', { 
-        state: {
-          cartItems: cartItems.map(item => ({
-            name: item.Name || item.name,
-            price: item.Price || item.price,
-            quantity: item.quantity,
-            image: item.ImageUrl || item.image
-          })),
-          cartTotal: cartTotal + shippingFee,
-          orderId: transaction.reference,
-          shippingAddress: {
-            name: `${formData.firstName} ${formData.lastName}`,
-            street: formData.address,
-            city: formData.city,
-            state: formData.state,
-            phone: formData.phone
+      
+      showSuccessAlert(
+        'Order Confirmed!', 
+        'Your order has been placed successfully.',
+        2000
+      );
+
+      setTimeout(() => {
+        navigate('/order-completed', { 
+          state: {
+            cartItems: cartItems.map(item => ({
+              name: item.Name || item.name,
+              price: item.Price || item.price,
+              quantity: item.quantity,
+              image: item.ImageUrl || item.image
+            })),
+            cartTotal: cartTotal + shippingFee,
+            orderId: transaction.reference,
+            shippingAddress: {
+              name: `${formData.firstName} ${formData.lastName}`,
+              street: formData.address,
+              city: formData.city,
+              state: formData.state,
+              phone: formData.phone
+            }
           }
-        }
-      });
+        });
+      }, 2200);
+      
     } catch (error) {
-      console.error('Order processing failed:', error);
-      navigate('/order-completed', { 
-        state: { 
-          transactionId: transaction.reference,
-          error: 'Payment processed but order confirmation failed. Please contact support with your transaction ID.'
-        } 
-      });
+      closeAlert();
+      
+      showErrorAlert(
+        'Order Confirmation Failed',
+        'Payment was successful, but we had trouble confirming your order. Please contact support with your transaction ID.'
+      );
+      
+      setTimeout(() => {
+        navigate('/order-completed', { 
+          state: { 
+            transactionId: transaction.reference,
+            error: 'Payment processed but order confirmation failed. Please contact support with your transaction ID.'
+          } 
+        });
+      }, 2500);
     } finally {
       setIsProcessing(false);
     }
@@ -135,10 +180,19 @@ const Delivery = () => {
     publicKey: process.env.REACT_APP_PAYSTACK_PUBLIC_KEY,
     text: isProcessing ? "Processing..." : `Pay ₦${(grandTotal / 100).toLocaleString()}`,
     onSuccess: (transaction) => processOrder(transaction),
-    onClose: () => console.log('Payment window closed'),
+    onClose: () => {
+      showSuccessAlert(
+        'Payment Cancelled',
+        'You can continue shopping. Your cart items are still saved.',
+        2000
+      );
+    },
     onError: (error) => {
       console.error('Paystack Error:', error);
-      alert(`Payment error: ${error.message || 'Unknown error occurred'}`);
+      showErrorAlert(
+        'Payment Failed',
+        error.message || 'An unknown error occurred. Please try again.'
+      );
     },
     metadata: {
       custom_fields: [
@@ -161,6 +215,41 @@ const Delivery = () => {
     .map(area => (
       <option key={area} value={area}>{area}</option>
     ));
+
+  // Loading components
+  const Loader = ({ size = 'small', inline = false }) => (
+    <div className={`loader ${size} ${inline ? 'inline-loader' : ''}`}>
+      <div className="loader-spinner"></div>
+    </div>
+  );
+
+  // Handle empty cart
+  useEffect(() => {
+    if (!cartLoading && cartItems.length === 0) {
+      showErrorAlert(
+        'Empty Cart',
+        'Your cart is empty. Please add items before checkout.'
+      );
+      setTimeout(() => navigate('/'), 2000);
+    }
+  }, [cartItems, cartLoading, navigate]);
+
+  if (cartLoading) {
+    return (
+      <div className="component">
+        <div className="header-section">
+          <div className="logo" onClick={redirectToHomepage}>
+            <span className='logo-purple'>BOOGI</span>
+            <span className='logo-gold'>NOIRE</span>
+          </div>
+        </div>
+        <div className="loading-container full-page-loader">
+          <Loader size="large" />
+          <p className="loading-text">Loading your cart...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="component">
@@ -192,6 +281,7 @@ const Delivery = () => {
               value={formData.firstName}
               onChange={handleChange}
               required
+              disabled={isProcessing}
             />
           </div>
           <div className="form-group">
@@ -202,6 +292,7 @@ const Delivery = () => {
               value={formData.lastName}
               onChange={handleChange}
               required
+              disabled={isProcessing}
             />
           </div>
 
@@ -214,6 +305,7 @@ const Delivery = () => {
               onChange={handleChange}
               placeholder="Enter house number and street name"
               required
+              disabled={isProcessing}
             />
           </div>
 
@@ -226,6 +318,7 @@ const Delivery = () => {
                 value={formData.city}
                 onChange={handleChange}
                 required
+                disabled={isProcessing}
               />
             </div>
             <div className="form-group">
@@ -236,6 +329,7 @@ const Delivery = () => {
                 value={formData.state}
                 onChange={handleChange}
                 required
+                disabled={isProcessing}
               />
             </div>
           </div>
@@ -247,12 +341,18 @@ const Delivery = () => {
               value={formData.lga}
               onChange={handleChange}
               required
-              disabled={loadingFees}
+              disabled={loadingFees || isProcessing}
+              className={loadingFees ? 'loading-select' : ''}
             >
               <option value="">Select your area</option>
               {areaOptions}
             </select>
-            {loadingFees && <p className="loading-text">Loading shipping options...</p>}
+            {loadingFees && (
+              <div className="select-loader">
+                <Loader inline />
+                <span>Loading shipping options</span>
+              </div>
+            )}
           </div>
 
           <div className="form-group">
@@ -263,6 +363,7 @@ const Delivery = () => {
               value={formData.phone}
               onChange={handleChange}
               required
+              disabled={isProcessing}
             />
           </div>
 
@@ -274,6 +375,7 @@ const Delivery = () => {
               value={formData.email}
               onChange={handleChange}
               required
+              disabled={isProcessing}
             />
           </div>
 
@@ -284,20 +386,25 @@ const Delivery = () => {
               value={formData.instructions}
               onChange={handleChange}
               placeholder="Any special delivery instructions"
+              disabled={isProcessing}
             />
           </div>
           
           <PaystackButton 
             {...paystackConfig} 
-            className="place-order"
+            className={`place-order ${isProcessing ? 'processing' : ''}`}
             disabled={
               !formData.email || 
               !formData.lga || 
               cartItems.length === 0 || 
               isProcessing ||
-              loadingFees
+              loadingFees ||
+              cartLoading
             }
-          />
+          >
+            {isProcessing && <Loader inline />}
+            {isProcessing ? "Processing..." : `Pay ₦${(grandTotal / 100).toLocaleString()}`}
+          </PaystackButton>
         </form>
 
         <div className="billing-summary">
@@ -308,15 +415,29 @@ const Delivery = () => {
           </div>
           <div className="total">
             <span>Shipping ({formData.lga ? 'Selected' : 'Not selected'})</span>
-            <span>
-              {loadingFees ? 'Loading...' : `₦${shippingFee.toLocaleString()}`}
+            <span className="shipping-fee">
+              {loadingFees ? (
+                <>
+                  <Loader inline />
+                  <span className="loading-label">Calculating</span>
+                </>
+              ) : (
+                `₦${shippingFee.toLocaleString()}`
+              )}
             </span>
           </div>
           <hr />
-          <div className="total">
+          <div className="total grand-total">
             <span>Total</span>
-            <span>
-              {loadingFees ? 'Calculating...' : `₦${(cartTotal + shippingFee).toLocaleString()}`}
+            <span className="total-amount">
+              {loadingFees ? (
+                <>
+                  <Loader inline />
+                  <span className="loading-label">Calculating total</span>
+                </>
+              ) : (
+                `₦${(cartTotal + shippingFee).toLocaleString()}`
+              )}
             </span>
           </div>
         </div>

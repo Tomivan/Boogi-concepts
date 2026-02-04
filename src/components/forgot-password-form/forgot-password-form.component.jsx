@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendPasswordResetEmail, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { auth } from '../../firebase';
@@ -9,12 +9,13 @@ const ForgotPasswordForm = () => {
     const [email, setEmail] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
-    const [loading, setLoading]= useState(false);
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleResetPassword = async (e) => {
         e.preventDefault();
-        setError('')
+        setError('');
+        setLoading(true);
         showLoadingAlert('Sending reset link...');
 
         try {
@@ -22,7 +23,9 @@ const ForgotPasswordForm = () => {
             const methods = await fetchSignInMethodsForEmail(auth, email);
             
             if (methods.length === 0) {
+              closeAlert();
               setError('No account found with this email');
+              setLoading(false);
               return;
             }
       
@@ -39,7 +42,9 @@ const ForgotPasswordForm = () => {
             
           } catch (err) {
             closeAlert();
-            showErrorAlert('Reset link not sent');
+            const errorMessage = getErrorMessage(err.code);
+            setError(errorMessage);
+            showErrorAlert(errorMessage);
           } finally {
             setLoading(false);
           }
@@ -55,6 +60,7 @@ const ForgotPasswordForm = () => {
             return 'Failed to send reset email. Please try again.';
         }
     };
+
     return(
         <div className="component">
             <div className="logo">
@@ -75,9 +81,19 @@ const ForgotPasswordForm = () => {
                     placeholder='Enter your email address'
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
                  />
-                <button className='reset-password'>
-                    {loading ? "Sending...":"Reset Password"}
+                <button 
+                    className='reset-password' 
+                    type="submit"
+                    disabled={loading || !email}
+                >
+                    {loading ? (
+                        <>
+                            <span className="button-loader"></span>
+                            Sending...
+                        </>
+                    ) : "Reset Password"}
                 </button>
             </form>
             )}

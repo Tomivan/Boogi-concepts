@@ -1,6 +1,5 @@
-// firebase/cartService.js
 import { db } from '../firebase';
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 export const getCart = async (userId) => {
   const cartRef = doc(db, 'carts', userId);

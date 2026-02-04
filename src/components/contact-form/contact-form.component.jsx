@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { 
+  showSuccessAlert, 
+  showErrorAlert, 
+  showLoadingAlert,
+  closeAlert 
+} from '../../utils/alert';
 import './contact-form.component.css';
 
 const ContactForm = () => {
@@ -24,7 +30,11 @@ const ContactForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isSubmitting) return;
+    
     setIsSubmitting(true);
+    showLoadingAlert('Sending Message', 'Please wait while we send your message...');
 
     try {
       const functions = getFunctions();
@@ -37,15 +47,32 @@ const ContactForm = () => {
         message: formData.message
       });
 
+      closeAlert();
+      showSuccessAlert(
+        'Message Sent!', 
+        'Thank you for contacting us. We\'ll get back to you soon.',
+        3000
+      );
+      
       setSubmitStatus('success');
       setFormData({ firstName: '', lastName: '', phone: '', email: '', message: '' });
+      
+      setTimeout(() => {
+        navigate('/');
+      }, 3500);
+      
     } catch (error) {
-      console.error('Error sending email:', error);
+      closeAlert();
+      showErrorAlert(
+        'Message Failed', 
+        'We couldn\'t send your message. Please check your connection and try again.'
+      );
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);
     }
   };
+  
     return (
         <div className='component'>
             <div className="logo" onClick={redirectToHomepage}>
@@ -55,17 +82,7 @@ const ContactForm = () => {
             <div className="contact">
                 <form className="contact-form" onSubmit={handleSubmit}>
                 <h1>Contact Form</h1>
-                {submitStatus === 'success' && (
-                    <div className="success-message">
-                    Thank you! Your message has been sent.
-                    </div>
-                )}
-
-                {submitStatus === 'error' && (
-                    <div className="error-message">
-                    Failed to send message. Please try again.
-                    </div>
-                )}
+                
                 <div className="form-group">
                     <label>First Name</label>
                     <input 
@@ -74,6 +91,7 @@ const ContactForm = () => {
                     value={formData.firstName}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
                     />
                 </div>
                 <div className="form-group">
@@ -84,6 +102,7 @@ const ContactForm = () => {
                     value={formData.lastName}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
                     />
                 </div>
 
@@ -95,6 +114,7 @@ const ContactForm = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
                     />
                 </div>
 
@@ -106,6 +126,7 @@ const ContactForm = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
                     />
                 </div>
 
@@ -116,10 +137,20 @@ const ContactForm = () => {
                     value={formData.message}
                     onChange={handleChange}
                     placeholder="Any special delivery instructions"
+                    disabled={isSubmitting}
                     />
                 </div>
-                <button className='add-to-cart' type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Sending...' : 'Submit'}
+                <button 
+                  className='add-to-cart' 
+                  type="submit" 
+                  disabled={isSubmitting}
+                >
+                    {isSubmitting ? (
+                      <>
+                        <span className="button-loader"></span>
+                        Sending...
+                      </>
+                    ) : 'Submit'}
                 </button>
                 </form>
             </div>

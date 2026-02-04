@@ -1,5 +1,3 @@
-// completed.component.js
-import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import './completed.component.css';
@@ -8,7 +6,6 @@ const Completed = () => {
     const { state } = useLocation();
     const navigate = useNavigate();
     
-    // Default values and data transformation
     const { 
       cartItems = [], 
       cartTotal = 0, 
@@ -16,8 +13,6 @@ const Completed = () => {
       shippingAddress = {},
       error 
     } = state || {};
-
-    console.log(state)
   
     // Transform items if they come from different sources
     const normalizedItems = cartItems.map(item => ({
@@ -55,7 +50,7 @@ const Completed = () => {
         <div className="order-details">
           {normalizedItems.map((item, index) => (
             <div className="item" key={index}>
-              <img src={item.image} alt={item.name} className='cart-perfume' />
+              <img src={item.image} alt={item.name} loading="lazy"className='cart-perfume' width="150" height="150"/>
               <div className="left-detail">
                 <p>{item.name}</p>
                 <p>₦{item.price.toLocaleString()} × {item.quantity}</p>

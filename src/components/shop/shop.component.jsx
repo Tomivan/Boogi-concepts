@@ -1,19 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { collection, getDocs, query, where, limit, orderBy, getDoc, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { FaChevronLeft, FaChevronRight, FaPlus, FaTimes, FaEdit } from 'react-icons/fa';
 import { db } from '../../firebase';
+import { 
+  showSuccessAlert, 
+  showErrorAlert, 
+  showLoadingAlert,
+  showConfirmAlert,
+  closeAlert 
+} from '../../utils/alert';
 import './shop.component.css';
 
 const ADMIN_EMAILS = ['okwuchidavida@gmail.com'];
+
 const Shop = () => {
     const [menProducts, setMenProducts] = useState([]);
     const [womenProducts, setWomenProducts] = useState([]);
     const [popularProducts, setPopularProducts] = useState([]);
-    const [allProducts, setAllProducts] = useState([]); // For admin to select from
+    const [allProducts, setAllProducts] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState('');
-    const [selectedSection, setSelectedSection] = useState('popular');
     const { currentUser } = useAuth();
 
     const isAdmin = currentUser && ADMIN_EMAILS.includes(currentUser.email);
@@ -32,6 +39,8 @@ const Shop = () => {
     }); 
     
     const [loading, setLoading] = useState(true);
+    const [addingProduct, setAddingProduct] = useState(false);
+    const [removingProduct, setRemovingProduct] = useState('');
     const [adminMode, setAdminMode] = useState(false);
     const navigate = useNavigate();
 
@@ -81,6 +90,7 @@ const Shop = () => {
         const fetchProducts = async () => {
             try {
                 setLoading(true);
+                showLoadingAlert('Loading Shop', 'Fetching products...');
 
                 // Fetch all products for admin selection
                 const allProductsQuery = query(collection(db, 'products'));
@@ -126,15 +136,21 @@ const Shop = () => {
                 setMenProducts(menProductsData.filter(Boolean));
                 setWomenProducts(womenProductsData);
                 setPopularProducts(popularData.filter(Boolean));
-                setLoading(false);
+                
+                closeAlert();
+                if (isAdmin) {
+                    showSuccessAlert('Shop Loaded', 'Products are ready for display.', 1500);
+                }
             } catch (error) {
-                console.error('Error fetching products:', error);
+                closeAlert();
+                showErrorAlert('Load Failed', 'Failed to load products. Please refresh the page.');
+            } finally {
                 setLoading(false);
             }
         };
 
         fetchProducts();
-    }, []);
+    }, [isAdmin]);
 
     const redirectToProductDetail = (product) => {
         navigate("/product-details", { state: { product } });
@@ -144,6 +160,9 @@ const Shop = () => {
         if (!selectedProduct) return;
         
         try {
+            setAddingProduct(true);
+            showLoadingAlert('Adding Product', 'Adding product to section...');
+            
             const productRef = doc(db, 'products', selectedProduct);
             const rank = section === 'popular' ? popularProducts.length + 1 : 
                          section === 'men' ? menProducts.length + 1 : 
@@ -173,13 +192,40 @@ const Shop = () => {
             }
             
             setSelectedProduct('');
+            
+            closeAlert();
+            showSuccessAlert(
+                'Product Added!', 
+                `Product added to ${section} section successfully.`,
+                1500
+            );
         } catch (error) {
-            console.error('Error adding to section:', error);
+            closeAlert();
+            showErrorAlert('Add Failed', 'Failed to add product. Please try again.');
+        } finally {
+            setAddingProduct(false);
         }
     };
 
     const removeFromSection = async (section, productId) => {
+        const productToRemove = [...popularProducts, ...menProducts, ...womenProducts]
+            .find(p => p.id === productId);
+        
+        if (!productToRemove) return;
+
+        const result = await showConfirmAlert(
+            'Remove Product',
+            `Are you sure you want to remove "${productToRemove.Name || productToRemove.name}" from ${section} section?`,
+            'Yes, Remove',
+            'Cancel'
+        );
+        
+        if (!result.isConfirmed) return;
+        
         try {
+            setRemovingProduct(productId);
+            showLoadingAlert('Removing Product', 'Removing from section...');
+            
             // Remove from the appropriate collection
             const sectionCollection = 
                 section === 'popular' ? 'popularPerfumes' : 
@@ -196,9 +242,36 @@ const Shop = () => {
             } else {
                 setWomenProducts(prev => prev.filter(p => p.id !== productId));
             }
+            
+            closeAlert();
+            showSuccessAlert(
+                'Product Removed!',
+                `Product removed from ${section} section successfully.`,
+                1500
+            );
         } catch (error) {
-            console.error('Error removing from section:', error);
+            closeAlert();
+            showErrorAlert('Remove Failed', 'Failed to remove product. Please try again.');
+        } finally {
+            setRemovingProduct('');
         }
+    };
+
+    const toggleAdminMode = () => {
+        if (adminMode) {
+            showSuccessAlert(
+                'Admin Mode Disabled',
+                'Admin controls are now hidden.',
+                1500
+            );
+        } else {
+            showSuccessAlert(
+                'Admin Mode Enabled',
+                'Admin controls are now visible.',
+                1500
+            );
+        }
+        setAdminMode(!adminMode);
     };
 
     const renderAdminControls = (section) => {
@@ -210,6 +283,7 @@ const Shop = () => {
                     value={selectedProduct}
                     onChange={(e) => setSelectedProduct(e.target.value)}
                     className='admin-select'
+                    disabled={addingProduct}
                 >
                     <option value="">Select a product</option>
                     {allProducts.map(product => (
@@ -220,10 +294,19 @@ const Shop = () => {
                 </select>
                 <button 
                     onClick={() => addToSection(section)}
-                    disabled={!selectedProduct}
+                    disabled={!selectedProduct || addingProduct}
                     className="add-button"
                 >
-                    <FaPlus /> Add to {section}
+                    {addingProduct ? (
+                        <>
+                            <span className="button-loader"></span>
+                            Adding...
+                        </>
+                    ) : (
+                        <>
+                            <FaPlus /> Add to {section}
+                        </>
+                    )}
                 </button>
             </div>
         );
@@ -235,13 +318,18 @@ const Shop = () => {
                 <button 
                     className="carousel-arrow left-arrow" 
                     onClick={() => prevSlide(section)}
-                    disabled={currentIndices[section] === 0}
+                    disabled={currentIndices[section] === 0 || loading}
                 >
                     <FaChevronLeft />
                 </button>
                 
                 <div className="perfumes">
-                    {products.slice(
+                    {loading ? (
+                        <div className="carousel-loading">
+                            <div className="carousel-loader"></div>
+                            <p>Loading {section} products...</p>
+                        </div>
+                    ) : products.slice(
                         currentIndices[section], 
                         currentIndices[section] + productsPerPage[section]
                     ).map(product => (
@@ -250,14 +338,22 @@ const Shop = () => {
                                 <div 
                                     className="remove-button"
                                     onClick={() => removeFromSection(section, product.id)}
+                                    title="Remove from section"
                                 >
-                                    <FaTimes />
+                                    {removingProduct === product.id ? (
+                                        <div className="removing-loader"></div>
+                                    ) : (
+                                        <FaTimes />
+                                    )}
                                 </div>
                             )}
                             <img 
                                 src={product.ImageUrl || product.image} 
                                 alt={product.Name || product.name} 
+                                loading="lazy"
                                 onClick={() => redirectToProductDetail(product)}
+                                width="150"
+                                height="150"
                             />
                             <p className='perfume-name'>{product.Name || product.name}</p>
                             <p className='price'>&#8358; {(product.Price || product.price).toLocaleString()}</p>
@@ -268,7 +364,7 @@ const Shop = () => {
                 <button 
                     className="carousel-arrow right-arrow" 
                     onClick={() => nextSlide(section)}
-                    disabled={currentIndices[section] >= products.length - productsPerPage[section]}
+                    disabled={currentIndices[section] >= products.length - productsPerPage[section] || loading}
                 >
                     <FaChevronRight />
                 </button>
@@ -277,14 +373,23 @@ const Shop = () => {
     };
 
     if (loading) {
-        return <div className="loading">Loading products...</div>;
+        return (
+            <div className="shop-loading">
+                <div className="shop-loader"></div>
+                <p>Loading shop...</p>
+            </div>
+        );
     }
 
     return (
         <div className="shop">
             {isAdmin && (
                 <div className="admin-mode-toggle">
-                    <button onClick={() => setAdminMode(!adminMode)} className="admin-mode">
+                    <button 
+                        onClick={toggleAdminMode} 
+                        className="admin-mode"
+                        disabled={loading}
+                    >
                         <FaEdit /> {adminMode ? 'Exit Admin Mode' : 'Enter Admin Mode'}
                     </button>
                 </div>

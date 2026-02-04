@@ -1,5 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { 
+  showSuccessAlert, 
+  showErrorAlert, 
+  showLoadingAlert,
+  closeAlert 
+} from '../../utils/alert';
 import './edit-perfume.component.css';
 
 const EditPerfumeForm = ({ product, onSave, onCancel }) => {
@@ -14,6 +20,7 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const storage = getStorage();
 
@@ -41,9 +48,22 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
     }));
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showErrorAlert('File Too Large', 'Please select an image smaller than 5MB.');
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      showErrorAlert('Invalid File Type', 'Please select a JPEG, PNG, WEBP, or GIF image.');
+      return;
+    }
 
     // Create preview
     const reader = new FileReader();
@@ -53,15 +73,17 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
     reader.readAsDataURL(file);
 
     // Upload to Firebase Storage
-    uploadImage(file);
+    await uploadImage(file);
   };
 
-  const uploadImage = (file) => {
+  const uploadImage = async (file) => {
     if (!file) return;
 
     setIsUploading(true);
     setUploadProgress(0);
     
+    showLoadingAlert('Uploading Image', 'Please wait while we upload your image...');
+
     const storageRef = ref(storage, `perfumes/${Date.now()}_${file.name}`);
     const uploadTask = uploadBytesResumable(storageRef, file);
 
@@ -71,27 +93,116 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
         setUploadProgress(progress);
       },
       (error) => {
-        console.error('Upload failed:', error);
         setIsUploading(false);
+        closeAlert();
+        showErrorAlert('Upload Failed', 'Failed to upload image. Please try again.');
+        console.error('Upload error:', error);
       },
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+      async () => {
+        try {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
           setFormData(prev => ({
             ...prev,
             Image: downloadURL
           }));
           setIsUploading(false);
-        });
+          closeAlert();
+          showSuccessAlert(
+            'Image Uploaded!', 
+            'Your image has been uploaded successfully.',
+            1500
+          );
+        } catch (error) {
+          setIsUploading(false);
+          closeAlert();
+          showErrorAlert('Upload Error', 'Failed to get image URL. Please try again.');
+          console.error('Download URL error:', error);
+        }
       }
     );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave({
-      ...formData,
-      id: product ? product.id : Date.now()
-    });
+    
+    if (isSaving || isUploading) return;
+    
+    // Validate form
+    if (!formData.Name.trim() || !formData.Brand.trim() || !formData.Description.trim()) {
+      showErrorAlert('Validation Error', 'Please fill in all required fields.');
+      return;
+    }
+
+    if (formData.Price <= 0) {
+      showErrorAlert('Validation Error', 'Please enter a valid price greater than 0.');
+      return;
+    }
+
+    setIsSaving(true);
+    showLoadingAlert(
+      product ? 'Updating Perfume' : 'Adding Perfume',
+      product ? 'Saving your changes...' : 'Creating new perfume...'
+    );
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      closeAlert();
+      
+      showSuccessAlert(
+        product ? 'Perfume Updated!' : 'Perfume Added!',
+        product 
+          ? 'Your perfume has been updated successfully.' 
+          : 'New perfume has been added to the catalog.',
+        1500
+      );
+      
+      // Call parent save function
+      onSave({
+        ...formData,
+        id: product ? product.id : Date.now()
+      });
+      
+      if (!product) {
+        setFormData({
+          Name: '',
+          Price: 0,
+          Description: '',
+          Image: '',
+          Brand: '',
+          Gender: 'Unisex'
+        });
+        setImagePreview('');
+      }
+      
+    } catch (error) {
+      closeAlert();
+      showErrorAlert(
+        product ? 'Update Failed' : 'Add Failed',
+        product 
+          ? 'Failed to update perfume. Please try again.' 
+          : 'Failed to add perfume. Please try again.'
+      );
+      console.error('Save error:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if ((formData.Name || formData.Brand || formData.Description || formData.Image) && !isSaving) {
+      // Ask for confirmation if form has data
+      showErrorAlert(
+        'Unsaved Changes',
+        'You have unsaved changes. Are you sure you want to cancel?'
+      ).then((result) => {
+        if (result.isConfirmed) {
+          onCancel();
+        }
+      });
+    } else {
+      onCancel();
+    }
   };
 
   return (
@@ -100,34 +211,39 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
         <h2>{product ? 'Edit Perfume' : 'Add New Perfume'}</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Name:</label>
+            <label>Name *</label>
             <input
               type="text"
               name="Name"
               value={formData.Name}
               onChange={handleChange}
               required
+              disabled={isUploading || isSaving}
+              placeholder="Enter perfume name"
             />
           </div>
 
           <div className="form-group">
-            <label>Brand:</label>
+            <label>Brand *</label>
             <input
               type="text"
               name="Brand"
               value={formData.Brand}
               onChange={handleChange}
               required
+              disabled={isUploading || isSaving}
+              placeholder="Enter brand name"
             />
           </div>
 
           <div className="form-group">
-            <label>Gender:</label>
+            <label>Gender *</label>
             <select
               name="Gender"
               value={formData.Gender}
               onChange={handleChange}
               required
+              disabled={isUploading || isSaving}
             >
               <option value="Male">Male</option>
               <option value="Female">Female</option>
@@ -136,68 +252,99 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
           </div>
           
           <div className="form-group">
-            <label>Price (₦):</label>
+            <label>Price (₦) *</label>
             <input
               type="number"
               name="Price"
               value={formData.Price}
               onChange={handleChange}
               min="0"
+              step="100"
               required
+              disabled={isUploading || isSaving}
+              placeholder="Enter price in Naira"
             />
           </div>
           
           <div className="form-group">
-            <label>Description:</label>
+            <label>Description *</label>
             <textarea
               name="Description"
               value={formData.Description}
               onChange={handleChange}
               required
+              disabled={isUploading || isSaving}
+              placeholder="Describe the perfume scent, notes, and characteristics"
+              rows="4"
             />
           </div>
           
           <div className="form-group">
-            <label>Image:</label>
+            <label>Image</label>
             <input
               type="text"
               name="Image"
               value={formData.Image}
               onChange={handleChange}
               placeholder="Image URL or upload below"
+              disabled={isUploading || isSaving}
             />
             
             <div className="image-upload-section">
-              <label className="upload-button">
-                Upload Image
+              <label className={`upload-button ${isUploading || isSaving ? 'disabled' : ''}`}>
+                {isUploading ? 'Uploading...' : 'Upload Image'}
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
                   style={{ display: 'none' }}
+                  disabled={isUploading || isSaving}
                 />
               </label>
               
               {isUploading && (
                 <div className="upload-progress">
-                  <progress value={uploadProgress} max="100" />
-                  <span>{Math.round(uploadProgress)}%</span>
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill" 
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                  <span>{Math.round(uploadProgress)}% Uploaded</span>
                 </div>
               )}
               
               {imagePreview && (
                 <div className="image-preview">
                   <img src={imagePreview} alt="Preview" />
-                  <p className="image-url">Image URL: {formData.Image}</p>
+                  {formData.Image && (
+                    <p className="image-url">Image URL: {formData.Image.substring(0, 50)}...</p>
+                  )}
                 </div>
               )}
             </div>
           </div>
           
           <div className="form-actions">
-            <button type="button" onClick={onCancel} className='cancel'>Cancel</button>
-            <button type="submit" disabled={isUploading} className='add-image'>
-              {isUploading ? 'Uploading...' : 'Save'}
+            <button 
+              type="button" 
+              onClick={handleCancel} 
+              className='cancel'
+              disabled={isSaving}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              disabled={isUploading || isSaving} 
+              className='add-image'
+            >
+              {isSaving ? (
+                <>
+                  <span className="button-loader"></span>
+                  {product ? 'Saving...' : 'Adding...'}
+                </>
+              ) : (product ? 'Update Perfume' : 'Add Perfume')}
             </button>
           </div>
         </form>

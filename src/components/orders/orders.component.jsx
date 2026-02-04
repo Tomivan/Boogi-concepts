@@ -1,5 +1,4 @@
-// orders.component.js
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../../firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
@@ -10,11 +9,13 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [fetchingOrders, setFetchingOrders] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
+        setFetchingOrders(true);
         try {
           const ordersRef = collection(db, 'orders');
           const q = query(
@@ -32,6 +33,8 @@ const Orders = () => {
           setOrders(ordersData);
         } catch (error) {
           console.error('Error fetching orders:', error);
+        } finally {
+          setFetchingOrders(false);
         }
       }
       setLoading(false);
@@ -41,7 +44,14 @@ const Orders = () => {
   }, []);
 
   if (loading) {
-    return <div className="component loading">Loading orders...</div>;
+    return (
+      <div className="component loading">
+        <div className="orders-loader-container">
+          <div className="orders-loader"></div>
+          <p>Loading your account...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
@@ -60,7 +70,12 @@ const Orders = () => {
     <div className="component">
       <div className="orders">
         <h1>Orders</h1>
-        {orders.length === 0 ? (
+        {fetchingOrders ? (
+          <div className="orders-fetching">
+            <div className="orders-loader"></div>
+            <p>Fetching your orders...</p>
+          </div>
+        ) : orders.length === 0 ? (
           <p className='no-order'>You haven't placed any orders yet</p>
         ) : (
           orders.map(order => (
@@ -69,6 +84,7 @@ const Orders = () => {
                 <img 
                   src={order.items[0]?.imageUrl || '../../assets/images/perfume.jpg'} 
                   alt="ordered perfume" 
+                  loading="lazy"
                   className="cart-perfume" 
                 />
                 <div className="left-detail">

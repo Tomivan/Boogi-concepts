@@ -1,29 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useCart } from '../../context/CartContext';
-import { db } from '../../firebase'; // Import your Firebase configuration
+import { useCartStore } from '../../store/cartStore';
+import { db } from '../../firebase';
 import { collection, addDoc, query, where, onSnapshot } from 'firebase/firestore';
 import { FaStar, FaRegStar } from 'react-icons/fa';
+import { showSuccessAlert, showErrorAlert, showLoadingAlert, closeAlert } from '../../utils/alert';
 import './product-details.component.css';
 
 const ProductDetails = () => {
   const { state } = useLocation();
   const product = state?.product;
-  const { addToCart } = useCart();
+  
+  const addToCart = useCartStore((state) => state.addToCart);
+  const cartItems = useCartStore((state) => state.cartItems);
 
-  // State for reviews
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
+  const [submittingReview, setSubmittingReview] = useState(false);
   const [newReview, setNewReview] = useState({
     rating: 0,
     comment: '',
     name: '',
   });
   const [hoverRating, setHoverRating] = useState(0);
+  const [productLoading, setProductLoading] = useState(true);
 
   // Fetch reviews from Firebase
   useEffect(() => {
-    if (!product?.id) return;
+    if (!product?.id) {
+      setProductLoading(false);
+      return;
+    }
 
     const q = query(
       collection(db, 'reviews'),
@@ -37,13 +44,147 @@ const ProductDetails = () => {
       });
       setReviews(reviewsData);
       setLoadingReviews(false);
+      setProductLoading(false);
+    }, (error) => {
+      console.error('Error fetching reviews:', error);
+      setLoadingReviews(false);
+      setProductLoading(false);
     });
 
     return () => unsubscribe();
   }, [product?.id]);
 
+  // Handle add to cart with SweetAlert notifications
+  const handleAddToCart = async () => {
+    if (!product) return;
+    
+    // Show loading alert
+    showLoadingAlert('Adding to cart...');
+    
+    try {
+      // Check if product already in cart
+      const existingItem = cartItems.find(item => 
+        item.id === product.id || 
+        (item.Name === product.Name && item['Brand Name'] === product['Brand Name'])
+      );
+      
+      // Add to cart
+      addToCart(product);
+      
+      // Close loading alert
+      closeAlert();
+      
+      // Show success notification
+      if (existingItem) {
+        const newQuantity = existingItem.quantity + 1;
+        showSuccessAlert(
+          'Item Updated!', 
+          `${product.Name} quantity increased to ${newQuantity}`
+        );
+      } else {
+        showSuccessAlert(
+          'Added to Cart!', 
+          `${product.Name} has been added to your shopping cart`
+        );
+      }
+      
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      
+      // Close loading alert
+      closeAlert();
+      
+      // Show error notification
+      showErrorAlert(
+        'Failed to Add Item',
+        'There was an issue adding this item to your cart. Please try again.'
+      );
+    }
+  };
+
+  // Loader Components
+  const Loader = ({ size = 'small', inline = false }) => (
+    <div className={`loader ${size} ${inline ? 'inline-loader' : ''}`}>
+      <div className="loader-spinner"></div>
+    </div>
+  );
+
+  const SkeletonText = ({ width = '100%', height = '1rem', className = '' }) => (
+    <div 
+      className={`skeleton-text ${className}`} 
+      style={{ width, height }}
+    ></div>
+  );
+
+  const StarRatingSkeleton = () => (
+    <div className="star-rating-skeleton">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <SkeletonText key={i} width="24px" height="24px" className="skeleton-star" />
+      ))}
+    </div>
+  );
+
+  const ReviewSkeleton = () => (
+    <div className="review-skeleton">
+      <div className="review-header-skeleton">
+        <SkeletonText width="120px" height="16px" />
+        <SkeletonText width="80px" height="14px" />
+      </div>
+      <div className="review-rating-skeleton">
+        <StarRatingSkeleton />
+      </div>
+      <div className="review-comment-skeleton">
+        <SkeletonText width="100%" height="14px" />
+        <SkeletonText width="80%" height="14px" />
+        <SkeletonText width="60%" height="14px" />
+      </div>
+    </div>
+  );
+
+  const ProductSkeleton = () => (
+    <div className="product-details-skeleton">
+      <div className="product-main-skeleton">
+        <div className="image-skeleton">
+          <div className="skeleton-image"></div>
+        </div>
+        <div className="details-skeleton">
+          <SkeletonText width="70%" height="28px" className="title-skeleton" />
+          <SkeletonText width="50%" height="20px" />
+          <SkeletonText width="40%" height="24px" />
+          <SkeletonText width="100%" height="16px" />
+          <SkeletonText width="90%" height="16px" />
+          <SkeletonText width="80%" height="16px" />
+          <div className="button-skeleton">
+            <SkeletonText width="120px" height="40px" />
+          </div>
+        </div>
+      </div>
+      <div className="reviews-container-skeleton">
+        <SkeletonText width="120px" height="32px" className="section-title" />
+        <div className="reviews-section-skeleton">
+          {[1, 2, 3].map((i) => (
+            <ReviewSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (productLoading) {
+    return (
+      <div className="product-details">
+        <ProductSkeleton />
+      </div>
+    );
+  }
+
   if (!product) {
-    return <div>Product not found</div>;
+    return (
+      <div className="product-not-found">
+        <h2>Product not found</h2>
+        <p>The product you're looking for doesn't exist or has been removed.</p>
+      </div>
+    );
   }
 
   const handleInputChange = (e) => {
@@ -54,10 +195,13 @@ const ProductDetails = () => {
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (newReview.rating === 0) {
-      alert('Please select a rating');
+      showErrorAlert('Rating Required', 'Please select a star rating before submitting your review.');
       return;
     }
 
+    setSubmittingReview(true);
+    showLoadingAlert('Submitting review...');
+    
     try {
       await addDoc(collection(db, 'reviews'), {
         productId: product.id,
@@ -73,9 +217,16 @@ const ProductDetails = () => {
         comment: '',
         name: '',
       });
+      
+      closeAlert();
+      showSuccessAlert('Review Submitted!', 'Thank you for your feedback! Your review has been submitted successfully.');
+      
     } catch (error) {
       console.error('Error adding review:', error);
-      alert('Failed to submit review. Please try again.');
+      closeAlert();
+      showErrorAlert('Submission Failed', 'There was an error submitting your review. Please try again.');
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -86,7 +237,7 @@ const ProductDetails = () => {
   // Render star rating
   const renderStars = (rating) => {
     const stars = [];
-    const roundedRating = Math.round(rating * 2) / 2; // Round to nearest 0.5
+    const roundedRating = Math.round(rating * 2) / 2;
 
     for (let i = 1; i <= 5; i++) {
       if (i <= roundedRating) {
@@ -103,13 +254,24 @@ const ProductDetails = () => {
   return (
     <div className="product-details">
       <div className="product-main">
-        <img src={product.ImageUrl} alt={`a bottle of ${product.Name}`} />
+        <img 
+          src={product.ImageUrl} 
+          alt={`a bottle of ${product.Name}`}
+          loading="lazy"
+          height="300"
+          width="300"
+        />
         <div className="details">
           <p><strong className='name'>{product.Name}</strong></p>
           <p>Brand: {product['Brand Name'] || product.Brand || 'No brand specified'}</p>
           <p><strong>&#8358; {product.Price.toLocaleString()}</strong></p>
           <p>{product.Description}</p>
-          <button className='add-to-cart' onClick={() => addToCart(product)}>Add to Cart</button>
+          <button 
+            className='add-to-cart'
+            onClick={handleAddToCart}
+          >
+            Add to Cart
+          </button>
         </div>
       </div>
 
@@ -118,15 +280,34 @@ const ProductDetails = () => {
           <h2>Reviews</h2>
           
           <div className="average-rating">
-            <div className="rating-value">{averageRating.toFixed(1)}</div>
-            <div className="rating-stars">
-              {renderStars(averageRating)}
+            <div className="rating-value">
+              {loadingReviews ? (
+                <Loader size="small" inline />
+              ) : (
+                averageRating.toFixed(1)
+              )}
             </div>
-            <div className="rating-count">({reviews.length} reviews)</div>
+            <div className="rating-stars">
+              {loadingReviews ? (
+                <StarRatingSkeleton />
+              ) : (
+                renderStars(averageRating)
+              )}
+            </div>
+            <div className="rating-count">
+              {loadingReviews ? (
+                <Loader size="small" inline />
+              ) : (
+                `(${reviews.length} reviews)`
+              )}
+            </div>
           </div>
 
           {loadingReviews ? (
-            <p>Loading reviews...</p>
+            <div className="reviews-loading">
+              <Loader size="medium" />
+              <p>Loading reviews...</p>
+            </div>
           ) : reviews.length > 0 ? (
             <div className="reviews-list">
               {reviews.map(review => (
@@ -147,7 +328,10 @@ const ProductDetails = () => {
               ))}
             </div>
           ) : (
-            <p>No reviews yet. Be the first to review!</p>
+            <div className="no-reviews">
+              <FaRegStar className="no-reviews-icon" />
+              <p>No reviews yet. Be the first to review!</p>
+            </div>
           )}
 
           <form onSubmit={handleSubmitReview} className="review-form">
@@ -161,6 +345,7 @@ const ProductDetails = () => {
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
                     onClick={() => setNewReview({...newReview, rating: star})}
+                    className="star-wrapper"
                   >
                     {star <= (hoverRating || newReview.rating) ? (
                       <FaStar className="star filled" />
@@ -180,6 +365,7 @@ const ProductDetails = () => {
                 value={newReview.name}
                 onChange={handleInputChange}
                 required
+                disabled={submittingReview}
               />
             </div>
             <div className="form-group">
@@ -190,9 +376,23 @@ const ProductDetails = () => {
                 value={newReview.comment}
                 onChange={handleInputChange}
                 rows="4"
+                disabled={submittingReview}
               />
             </div>
-            <button type="submit" className="submit-review">Submit Review</button>
+            <button 
+              type="submit" 
+              className="submit-review"
+              disabled={submittingReview}
+            >
+              {submittingReview ? (
+                <>
+                  <Loader inline light />
+                  Submitting...
+                </>
+              ) : (
+                'Submit Review'
+              )}
+            </button>
           </form>
         </div>
       </div>

@@ -45,6 +45,123 @@ textarea{
     float: right;
 }
 
+.loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loader-spinner {
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: #8a2be2; /* Purple color matching your theme */
+  animation: spin 0.8s linear infinite;
+}
+
+.loader.small .loader-spinner {
+  width: 16px;
+  height: 16px;
+}
+
+.loader.medium .loader-spinner {
+  width: 24px;
+  height: 24px;
+}
+
+.loader.large .loader-spinner {
+  width: 40px;
+  height: 40px;
+  border-width: 3px;
+}
+
+.loader.inline-loader {
+  display: inline-flex;
+  margin-right: 8px;
+}
+
+.inline-loader .loader-spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 20px;
+}
+
+.full-page-loader {
+  height: 60vh;
+}
+
+.loading-text {
+  color: #666;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+.select-loader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: #666;
+  font-size: 14px;
+}
+
+.loading-select {
+  opacity: 0.7;
+}
+
+.skeleton-text {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.place-order.processing {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+.place-order .loader-spinner {
+  border-top-color: white;
+}
+
+.shipping-fee,
+.total-amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loading-label {
+  color: #666;
+  font-size: 14px;
+}
+
+/* Animations */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* For Paystack button loading state */
+.paystack-button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media screen and (max-width: 767px) {
     .delivery {
         flex-direction: column;
@@ -58,6 +175,18 @@ textarea{
     .billing-summary {
         width: 80vw;
         margin-top: 5%;
+    }
+    .loader.large .loader-spinner {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .select-loader {
+        font-size: 12px;
+    }
+    
+    .loading-label {
+        font-size: 12px;
     }
 }
 

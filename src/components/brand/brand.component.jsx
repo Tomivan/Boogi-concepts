@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import './brand.component.css';
@@ -7,17 +7,18 @@ const Brand = ({ onBrandFilter }) => {
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   // Fetch unique brands from Firestore
   useEffect(() => {
     const fetchBrands = async () => {
       try {
+        setLoading(true);
+        setError(false);
         const querySnapshot = await getDocs(collection(db, 'products'));
         
-        // Extract "Brand Name" field from each document
         const allBrands = querySnapshot.docs.map(doc => doc.data()['Brand Name']);
         
-        // Get unique brands, remove empty/null, and sort alphabetically
         const uniqueBrands = [...new Set(allBrands)]
           .filter(brand => brand && brand.trim() !== '')
           .sort((a, b) => a.localeCompare(b));
@@ -25,7 +26,7 @@ const Brand = ({ onBrandFilter }) => {
         setBrands(uniqueBrands);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching brands:', error);
+        setError(true);
         setLoading(false);
       }
     };
@@ -42,30 +43,43 @@ const Brand = ({ onBrandFilter }) => {
     onBrandFilter(newSelectedBrands);
   };
 
-  if (loading) {
-    return <div className="component brand">Loading brands...</div>;
-  }
-
   return (
     <div className='component brand'>
       <h3>Brand</h3>
-      {brands.length > 0 ? (
-        brands.map((brand) => (
-          <div className="flex" key={brand}>
-            <input
-              type='checkbox'
-              className='checkbox'
-              checked={selectedBrands.includes(brand)}
-              onChange={() => handleBrandToggle(brand)}
-              id={`brand-${brand.replace(/\s+/g, '-')}`}
-            />
-            <label htmlFor={`brand-${brand.replace(/\s+/g, '-')}`}>
-              {brand}
-            </label>
+      
+      {loading ? (
+        <div className="brand-loader-container">
+          <div className="brand-loader"></div>
+          <p>Loading brands...</p>
+        </div>
+      ) : error ? (
+        <div className="brand-error">
+          <p>Failed to load brands. Please try again.</p>
+        </div>
+      ) : brands.length > 0 ? (
+        <div className="brands-list-container">
+          <div className="brands-scrollable">
+            {brands.map((brand) => (
+              <div className="brand-item flex" key={brand}>
+                <input
+                  type='checkbox'
+                  className='checkbox'
+                  checked={selectedBrands.includes(brand)}
+                  onChange={() => handleBrandToggle(brand)}
+                  id={`brand-${brand.replace(/\s+/g, '-')}`}
+                  disabled={loading}
+                />
+                <label htmlFor={`brand-${brand.replace(/\s+/g, '-')}`}>
+                  {brand}
+                </label>
+              </div>
+            ))}
           </div>
-        ))
+        </div>
       ) : (
-        <p>No brands found</p>
+        <div className="no-brands">
+          <p>No brands found</p>
+        </div>
       )}
     </div>
   );

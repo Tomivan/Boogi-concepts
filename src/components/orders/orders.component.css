@@ -11,13 +11,163 @@
     justify-content: space-between;
     padding: 1em;
     border: 1px solid #0000001e;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    transition: box-shadow 0.2s;
+}
+.order:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 .order .item {
     margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 .react-tabs__tab--selected {
     border-top: none;
     border-left: none;
     border-right: none;
     border-bottom: 1px solid #000;
+}
+
+.orders-loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    text-align: center;
+}
+
+.orders-loader {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #4b0082;
+    border-radius: 50%;
+    animation: orders-spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes orders-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.orders-loader-container p,
+.orders-fetching p {
+    color: #666;
+    font-size: 1.1rem;
+    margin-top: 10px;
+}
+
+.orders-fetching {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 50px 0;
+    text-align: center;
+}
+
+.orders-fetching .orders-loader {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 15px;
+}
+
+.cart-perfume {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.left-detail {
+    flex: 1;
+}
+
+.left-detail p {
+    margin: 5px 0;
+    color: #333;
+}
+
+.left-detail p:first-child {
+    font-weight: 600;
+    color: #4b0082;
+}
+
+.left-detail p:nth-child(2) {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.left-detail p:nth-child(3) {
+    font-size: 1.1rem;
+    color: #000;
+}
+
+.left-detail p:nth-child(4) {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.purple {
+    color: #4b0082;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    border: 1px solid #4b0082;
+    border-radius: 4px;
+    transition: all 0.2s;
+    align-self: center;
+}
+
+.purple:hover {
+    background: #4b0082;
+    color: white;
+}
+
+.login-link {
+    display: inline-block;
+    background: #4b0082;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    text-decoration: none;
+    margin-top: 15px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.login-link:hover {
+    background: #3a0069;
+}
+
+@media (max-width: 767px) {
+    .order {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .item {
+        width: 100%;
+    }
+    
+    .purple {
+        align-self: flex-start;
+    }
+    
+    .cart-perfume {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .orders-loader {
+        width: 40px;
+        height: 40px;
+    }
 }

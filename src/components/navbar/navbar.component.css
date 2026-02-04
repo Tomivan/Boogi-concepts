@@ -1,120 +1,278 @@
-.navbar{
-    display: flex;
-    justify-content: space-between !important;
-    height: 4vh;
-    margin-top: 2%;
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 60px;
+  width: 100%;
+  padding: 0 20px;
+  position: relative;
+  border-bottom: 1px solid #f0f0f0;
 }
-li {
-    padding-right: 1em;
-    color: #4b0082;
+
+.topbar-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #4b0082;
+  font-size: 1.5rem;
+  padding: 0.5rem;
+  z-index: 1001;
 }
-.login-link {
-    text-decoration: none;
-    color: #4b0082;
+
+.topbar-collapse {
+  display: flex;
+  flex-grow: 1;
+  justify-content: center;
 }
-.link {
-    text-decoration: none;
-    display: flex;
+
+.navigation {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 30px;
 }
-.navbar-icon {
-    padding-right: 0.3em;
-    color: #4B0082;
+
+.navigation li {
+  color: #4b0082;
 }
-.move-left {
-    margin-left: 10%;
+
+.navigation .link {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  color: inherit;
+  padding: 0.5rem 0;
+  gap: 8px;
+  font-weight: 500;
+  transition: color 0.2s ease;
 }
+
+.navigation .link:hover,
+.navigation .link:focus {
+  color: #8a2be2;
+}
+
+.navigation .link:focus,
+.right .link:focus {
+  outline: 2px solid #4b0082;
+  outline-offset: 2px;
+}
+
+.logo {
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1.5rem;
+  user-select: none;
+  display: flex;
+  flex-shrink: 0;
+}
+
+.logo:focus {
+  outline: 2px solid #4b0082;
+  outline-offset: 2px;
+}
+
+.logo-purple {
+  color: #4b0082;
+}
+
+.logo-gold {
+  color: #d4af37;
+}
+
+.user-dropdown .dropdown-content {
+  display: none;
+}
+
+.user-dropdown .dropdown-content.show {
+  display: block;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.right .link {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  color: #4b0082;
+  padding: 0.5rem 0;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.right .link:hover {
+  color: #8a2be2;
+}
+
+.topbar-toggle:focus,
+.logo:focus,
+[role="button"]:focus,
+button:focus {
+  outline: 2px solid #4b0082;
+  outline-offset: 2px;
+}
+
+.cart-count {
+  margin-left: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .user-dropdown {
   position: relative;
-  display: inline-block;
-  padding-left: 2em;
 }
+
 .user-welcome {
-    cursor: pointer;
-    padding: 8px 12px;
-    border-radius: 4px;
-    transition: background-color 0.3s;
-    display: flex;
-    align-items: center;
+  cursor: pointer;
+  color: #4b0082;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 0;
 }
+
 .user-welcome:hover {
-  background-color: #f5f5f5;
+  color: #8a2be2;
 }
 
 .order-badge {
-  background-color: #4B0082;
+  background: #4b0082;
   color: white;
   border-radius: 50%;
-  padding: 2px 6px;
-  font-size: 12px;
-  margin-left: 8px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  margin-left: 4px;
 }
 
 .dropdown-content {
-  display: none;
   position: absolute;
+  top: 100%;
   right: 0;
-  background-color: white;
-  min-width: 200px;
-  box-shadow: 0px 8px 16px rgba(0,0,0,0.1);
-  z-index: 1;
-  border-radius: 4px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  min-width: 180px;
   padding: 10px 0;
+  z-index: 1000;
 }
 
-.dropdown-content a, .dropdown-content button {
+.dropdown-content a,
+.dropdown-content button {
   display: block;
-  padding: 8px 16px;
-  text-decoration: none;
-  color: #333;
   width: 100%;
+  padding: 10px 15px;
   text-align: left;
   border: none;
   background: none;
+  color: #4b0082;
+  font-size: 0.95rem;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.dropdown-content a:hover, .dropdown-content button:hover {
-  background-color: #f5f5f5;
+.dropdown-content a:hover,
+.dropdown-content button:hover {
+  background-color: #f8f5ff;
+  color: #8a2be2;
 }
 
-.user-dropdown:hover .dropdown-content {
-  display: block;
-}
-.logout-button {
-    background: none;
-    border: 1px solid #4B0082;
-    color: #4B0082;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
+@media screen and (max-width: 767px) {
+  .topbar {
+    padding: 0 15px;
+    height: 56px;
+  }
   
-.logout-button:hover {
-    background: #4B0082;
-    color: white;
-}
-
-
-@media screen  and (max-width: 1023px) {
-    .navbar-toggler {
-        width: 15vw;
-    }
-    .navbar-nav {
-        background: #ffffff;
-        padding: 1em !important;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        position: relative;
-        z-index: 100;
-    }
+  .topbar-toggle {
+    display: block;
+    order: 3;
+  }
+  
+  .topbar-collapse {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    flex-direction: column;
+    padding: 1em;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 1000;
+    display: none;
+    margin-top: 10px;
+  }
+  
+  .topbar-collapse.show {
+    display: flex;
+  }
+  
+  .navigation {
+    flex-direction: column;
+    width: 100%;
+    gap: 0;
+  }
+  
+  .navigation li {
+    padding: 0.5rem 0;
+    width: 100%;
+  }
+  
+  .navigation .link {
+    padding: 0.75rem 1rem;
+    gap: 12px;
+  }
+  
+  .right {
+    order: 2;
+    margin-left: auto;
+    margin-right: 10px;
+  }
+  
+  .logo {
+    order: 1;
+    font-size: 1.3rem;
+  }
+  
+  .user-welcome {
+    font-size: 0.9rem;
+  }
+  
+  .dropdown-content {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 250px;
+    max-width: 90vw;
+  }
 }
 
 @media screen and (min-width: 768px) and (max-width: 1023px) {
-  .navbar-toggler{
-    margin-left: 50%;
+  .topbar {
+    padding: 0 15px;
   }
+  
+  .navigation {
+    gap: 20px;
+  }
+  
   .right {
-    margin-left: 30%;
+    margin-left: auto;
+  }
+  
+  .topbar-collapse {
+    flex-grow: 0;
+    margin: 0 20px;
   }
 }

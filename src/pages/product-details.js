@@ -1,4 +1,3 @@
-import React from 'react';
 import ProductDetails from '../components/product-details/product-details.component';
 import Footer from '../components/footer/footer.component';
 import NavbarComponent from '../components/navbar/navbar.component';

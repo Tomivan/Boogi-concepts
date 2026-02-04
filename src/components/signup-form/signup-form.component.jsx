@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from "../../firebase";
@@ -12,6 +12,7 @@ const SignupForm = () => {
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
     const [passwordError, setPasswordError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const validatePassword = (password) => {
@@ -38,6 +39,9 @@ const SignupForm = () => {
             return;
         }
 
+        if (loading) return;
+        
+        setLoading(true);
         showLoadingAlert('Creating account...');
 
         try {
@@ -64,12 +68,13 @@ const SignupForm = () => {
 
             closeAlert();
             showSuccessAlert('Welcome!', 'Account created successfully');
+            setLoading(false);
             navigate("/login");
         } catch(err) {
             closeAlert();
+            setLoading(false);
             let errorMessage = 'Signup Failed';
             
-            // More specific error messages
             switch(err.code) {
                 case 'auth/email-already-in-use':
                     errorMessage = 'This email is already registered';
@@ -103,6 +108,7 @@ const SignupForm = () => {
                     onChange={(e) => setFullName(e.target.value)}
                     required
                     minLength={2}
+                    disabled={loading}
                 />
                 
                 <label>Email Address</label>
@@ -112,6 +118,7 @@ const SignupForm = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={loading}
                 />
                 
                 <label>Password</label>
@@ -125,20 +132,26 @@ const SignupForm = () => {
                     }}
                     required
                     minLength={8}
+                    disabled={loading}
                 />
                 {passwordError && <p className="error-message">{passwordError}</p>}
                 
                 <button 
                     type="submit" 
                     className='signup-button'
-                    disabled={!email || !password || !fullName || passwordError}
+                    disabled={!email || !password || !fullName || passwordError || loading}
                 >
-                    Signup
+                    {loading ? (
+                        <>
+                            <span className="button-loader"></span>
+                            Creating Account...
+                        </>
+                    ) : 'Signup'}
                 </button>
                 
                 <div className="login">
                     <p>Already have an account?</p>
-                    <Link to='/login' className='purple'>Log in</Link>
+                    <Link to='/login' className='purple' tabIndex={loading ? -1 : 0}>Log in</Link>
                 </div>
             </form>
         </div>

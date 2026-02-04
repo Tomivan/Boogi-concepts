@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { auth } from './firebase';
 import { AuthProvider } from './context/AuthContext';
 import { onAuthStateChanged } from 'firebase/auth';
-import { CartProvider } from './context/CartContext';
+import { CartProvider } from './components/CartProvider';
 import Pages from './pages';
 import './App.css';
 
