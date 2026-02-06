@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { 
   showSuccessAlert, 
-  showErrorAlert, 
-  showLoadingAlert,
-  closeAlert 
+  showErrorAlert
 } from '../../utils/alert';
 import './edit-perfume.component.css';
 
@@ -21,6 +19,8 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [showImageUploadLoader, setShowImageUploadLoader] = useState(false);
+  const [showSavingLoader, setShowSavingLoader] = useState(false);
 
   const storage = getStorage();
 
@@ -81,8 +81,7 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
 
     setIsUploading(true);
     setUploadProgress(0);
-    
-    showLoadingAlert('Uploading Image', 'Please wait while we upload your image...');
+    setShowImageUploadLoader(true);
 
     const storageRef = ref(storage, `perfumes/${Date.now()}_${file.name}`);
     const uploadTask = uploadBytesResumable(storageRef, file);
@@ -94,7 +93,7 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
       },
       (error) => {
         setIsUploading(false);
-        closeAlert();
+        setShowImageUploadLoader(false);
         showErrorAlert('Upload Failed', 'Failed to upload image. Please try again.');
         console.error('Upload error:', error);
       },
@@ -106,7 +105,7 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
             Image: downloadURL
           }));
           setIsUploading(false);
-          closeAlert();
+          setShowImageUploadLoader(false);
           showSuccessAlert(
             'Image Uploaded!', 
             'Your image has been uploaded successfully.',
@@ -114,7 +113,7 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
           );
         } catch (error) {
           setIsUploading(false);
-          closeAlert();
+          setShowImageUploadLoader(false);
           showErrorAlert('Upload Error', 'Failed to get image URL. Please try again.');
           console.error('Download URL error:', error);
         }
@@ -139,15 +138,12 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
     }
 
     setIsSaving(true);
-    showLoadingAlert(
-      product ? 'Updating Perfume' : 'Adding Perfume',
-      product ? 'Saving your changes...' : 'Creating new perfume...'
-    );
+    setShowSavingLoader(true);
 
     try {
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      closeAlert();
+      setShowSavingLoader(false);
       
       showSuccessAlert(
         product ? 'Perfume Updated!' : 'Perfume Added!',
@@ -176,7 +172,7 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
       }
       
     } catch (error) {
-      closeAlert();
+      setShowSavingLoader(false);
       showErrorAlert(
         product ? 'Update Failed' : 'Add Failed',
         product 
@@ -207,6 +203,35 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
 
   return (
     <div className="edit-perfume-overlay">
+      {/* Image Upload Loader Overlay */}
+      {showImageUploadLoader && (
+        <div className="upload-overlay-loader">
+          <div className="upload-overlay-container">
+            <div className="upload-overlay-spinner"></div>
+            <p>Uploading image...</p>
+            <div className="upload-overlay-progress">
+              <div className="upload-overlay-bar">
+                <div 
+                  className="upload-overlay-fill" 
+                  style={{ width: `${uploadProgress}%` }}
+                ></div>
+              </div>
+              <span className="upload-overlay-percentage">{Math.round(uploadProgress)}%</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Saving Loader Overlay */}
+      {showSavingLoader && (
+        <div className="saving-overlay-loader">
+          <div className="saving-overlay-container">
+            <div className="saving-overlay-spinner"></div>
+            <p>{product ? 'Updating perfume...' : 'Adding perfume...'}</p>
+          </div>
+        </div>
+      )}
+
       <div className="edit-perfume-container">
         <h2>{product ? 'Edit Perfume' : 'Add New Perfume'}</h2>
         <form onSubmit={handleSubmit}>
@@ -302,19 +327,7 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
                 />
               </label>
               
-              {isUploading && (
-                <div className="upload-progress">
-                  <div className="progress-bar">
-                    <div 
-                      className="progress-fill" 
-                      style={{ width: `${uploadProgress}%` }}
-                    ></div>
-                  </div>
-                  <span>{Math.round(uploadProgress)}% Uploaded</span>
-                </div>
-              )}
-              
-              {imagePreview && (
+              {imagePreview && !isUploading && (
                 <div className="image-preview">
                   <img src={imagePreview} alt="Preview" />
                   {formData.Image && (

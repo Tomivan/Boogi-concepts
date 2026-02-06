@@ -4,7 +4,7 @@ import { useCartStore } from '../../store/cartStore';
 import { db } from '../../firebase';
 import { collection, addDoc, query, where, onSnapshot } from 'firebase/firestore';
 import { FaStar, FaRegStar } from 'react-icons/fa';
-import { showSuccessAlert, showErrorAlert, showLoadingAlert, closeAlert } from '../../utils/alert';
+import { showSuccessAlert, showErrorAlert } from '../../utils/alert';
 import './product-details.component.css';
 
 const ProductDetails = () => {
@@ -24,6 +24,8 @@ const ProductDetails = () => {
   });
   const [hoverRating, setHoverRating] = useState(0);
   const [productLoading, setProductLoading] = useState(true);
+  const [showAddToCartLoader, setShowAddToCartLoader] = useState(false);
+  const [showSubmitReviewLoader, setShowSubmitReviewLoader] = useState(false);
 
   // Fetch reviews from Firebase
   useEffect(() => {
@@ -54,12 +56,11 @@ const ProductDetails = () => {
     return () => unsubscribe();
   }, [product?.id]);
 
-  // Handle add to cart with SweetAlert notifications
+  // Handle add to cart with custom loader
   const handleAddToCart = async () => {
     if (!product) return;
     
-    // Show loading alert
-    showLoadingAlert('Adding to cart...');
+    setShowAddToCartLoader(true);
     
     try {
       // Check if product already in cart
@@ -71,8 +72,7 @@ const ProductDetails = () => {
       // Add to cart
       addToCart(product);
       
-      // Close loading alert
-      closeAlert();
+      setShowAddToCartLoader(false);
       
       // Show success notification
       if (existingItem) {
@@ -91,8 +91,7 @@ const ProductDetails = () => {
     } catch (error) {
       console.error('Error adding to cart:', error);
       
-      // Close loading alert
-      closeAlert();
+      setShowAddToCartLoader(false);
       
       // Show error notification
       showErrorAlert(
@@ -200,7 +199,7 @@ const ProductDetails = () => {
     }
 
     setSubmittingReview(true);
-    showLoadingAlert('Submitting review...');
+    setShowSubmitReviewLoader(true);
     
     try {
       await addDoc(collection(db, 'reviews'), {
@@ -218,12 +217,12 @@ const ProductDetails = () => {
         name: '',
       });
       
-      closeAlert();
+      setShowSubmitReviewLoader(false);
       showSuccessAlert('Review Submitted!', 'Thank you for your feedback! Your review has been submitted successfully.');
       
     } catch (error) {
       console.error('Error adding review:', error);
-      closeAlert();
+      setShowSubmitReviewLoader(false);
       showErrorAlert('Submission Failed', 'There was an error submitting your review. Please try again.');
     } finally {
       setSubmittingReview(false);
@@ -253,6 +252,26 @@ const ProductDetails = () => {
 
   return (
     <div className="product-details">
+      {/* Add to Cart Loader Overlay */}
+      {showAddToCartLoader && (
+        <div className="product-overlay-loader">
+          <div className="product-overlay-container">
+            <div className="product-overlay-spinner"></div>
+            <p>Adding to cart...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Submit Review Loader Overlay */}
+      {showSubmitReviewLoader && (
+        <div className="product-overlay-loader">
+          <div className="product-overlay-container">
+            <div className="product-overlay-spinner"></div>
+            <p>Submitting review...</p>
+          </div>
+        </div>
+      )}
+
       <div className="product-main">
         <img 
           src={product.ImageUrl} 
@@ -269,8 +288,14 @@ const ProductDetails = () => {
           <button 
             className='add-to-cart'
             onClick={handleAddToCart}
+            disabled={showAddToCartLoader}
           >
-            Add to Cart
+            {showAddToCartLoader ? (
+              <>
+                <span className="button-loader"></span>
+                Adding...
+              </>
+            ) : 'Add to Cart'}
           </button>
         </div>
       </div>
@@ -386,7 +411,7 @@ const ProductDetails = () => {
             >
               {submittingReview ? (
                 <>
-                  <Loader inline light />
+                  <span className="button-loader"></span>
                   Submitting...
                 </>
               ) : (

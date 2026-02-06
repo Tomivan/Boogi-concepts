@@ -4,9 +4,7 @@ import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { 
   showSuccessAlert, 
-  showErrorAlert, 
-  showLoadingAlert,
-  closeAlert 
+  showErrorAlert
 } from '../../utils/alert';
 import './reset-password-form.component.css';
 
@@ -18,6 +16,8 @@ const ResetPasswordForm = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [validLink, setValidLink] = useState(true);
+  const [showResetLoader, setShowResetLoader] = useState(false);
+  const [showRedirectLoader, setShowRedirectLoader] = useState(false);
   const { oobCode } = useParams(); 
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,7 +28,6 @@ const ResetPasswordForm = () => {
       setEmail(location.state.email);
     }
   }, [location]);
-
 
   useEffect(() => {
     const verifyResetCode = async () => {
@@ -77,12 +76,12 @@ const ResetPasswordForm = () => {
     }
 
     setLoading(true);
-    showLoadingAlert('Resetting Password', 'Updating your password...');
+    setShowResetLoader(true);
 
     try {
       await confirmPasswordReset(auth, oobCode, newPassword);
       
-      closeAlert();
+      setShowResetLoader(false);
       showSuccessAlert(
         'Password Reset!', 
         'Your password has been reset successfully.',
@@ -91,21 +90,18 @@ const ResetPasswordForm = () => {
       
       setSuccess(true);
       
-      // Redirect after showing success message
+      // Show redirect loader
       setTimeout(() => {
-        showSuccessAlert(
-          'Redirecting', 
-          'Taking you to the login page...',
-          1500
-        );
+        setShowRedirectLoader(true);
         
         setTimeout(() => {
+          setShowRedirectLoader(false);
           navigate('/login');
         }, 1800);
       }, 2200);
       
     } catch (err) {
-      closeAlert();
+      setShowResetLoader(false);
       const errorMessage = getErrorMessage(err.code);
       showErrorAlert('Reset Failed', errorMessage);
     } finally {
@@ -129,13 +125,10 @@ const ResetPasswordForm = () => {
   };
 
   const handleRequestNewLink = () => {
-    showSuccessAlert(
-      'Redirecting', 
-      'Taking you to the password reset page...',
-      1500
-    );
+    setShowRedirectLoader(true);
     
     setTimeout(() => {
+      setShowRedirectLoader(false);
       navigate('/forgot-password');
     }, 1800);
   };
@@ -143,6 +136,16 @@ const ResetPasswordForm = () => {
   if (!validLink) {
     return (
       <div className="component">
+        {/* Redirect Loader Overlay */}
+        {showRedirectLoader && (
+          <div className="reset-overlay-loader">
+            <div className="reset-overlay-container">
+              <div className="reset-overlay-spinner"></div>
+              <p>Redirecting to reset page...</p>
+            </div>
+          </div>
+        )}
+        
         <div className="logo">
           <span className='logo-purple'>BOOGI</span>
           <span className='logo-gold'>NOIRE</span>
@@ -163,6 +166,26 @@ const ResetPasswordForm = () => {
 
   return (
     <div className="component">
+      {/* Reset Password Loader Overlay */}
+      {showResetLoader && (
+        <div className="reset-overlay-loader">
+          <div className="reset-overlay-container">
+            <div className="reset-overlay-spinner"></div>
+            <p>Resetting your password...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Redirect Loader Overlay */}
+      {showRedirectLoader && (
+        <div className="reset-overlay-loader">
+          <div className="reset-overlay-container">
+            <div className="reset-overlay-spinner"></div>
+            <p>Redirecting to login...</p>
+          </div>
+        </div>
+      )}
+
       <div className="logo">
         <span className='logo-purple'>BOOGI</span>
         <span className='logo-gold'>NOIRE</span>

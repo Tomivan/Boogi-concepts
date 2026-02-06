@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendPasswordResetEmail, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { auth } from '../../firebase';
-import { showErrorAlert, showSuccessAlert, showLoadingAlert, closeAlert } from '../../utils/alert';
+import { showErrorAlert, showSuccessAlert } from '../../utils/alert';
 import './forgot-password-form.component.css';
 
 const ForgotPasswordForm = () => {
@@ -10,20 +10,21 @@ const ForgotPasswordForm = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [showSendingLoader, setShowSendingLoader] = useState(false);
     const navigate = useNavigate();
 
     const handleResetPassword = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
-        showLoadingAlert('Sending reset link...');
+        setShowSendingLoader(true);
 
         try {
             // First check if email exists
             const methods = await fetchSignInMethodsForEmail(auth, email);
             
             if (methods.length === 0) {
-              closeAlert();
+              setShowSendingLoader(false);
               setError('No account found with this email');
               setLoading(false);
               return;
@@ -31,7 +32,7 @@ const ForgotPasswordForm = () => {
       
             // If email exists, send reset email and redirect
             await sendPasswordResetEmail(auth, email);
-            closeAlert();
+            setShowSendingLoader(false);
             showSuccessAlert('Email Sent', 'Check your inbox for reset instructions');
             setSuccess(true);
             
@@ -41,7 +42,7 @@ const ForgotPasswordForm = () => {
             }, 3000);
             
           } catch (err) {
-            closeAlert();
+            setShowSendingLoader(false);
             const errorMessage = getErrorMessage(err.code);
             setError(errorMessage);
             showErrorAlert(errorMessage);
@@ -63,6 +64,16 @@ const ForgotPasswordForm = () => {
 
     return(
         <div className="component">
+            {/* Sending Reset Link Loader Overlay */}
+            {showSendingLoader && (
+              <div className="reset-overlay-loader">
+                <div className="reset-overlay-container">
+                  <div className="reset-overlay-spinner"></div>
+                  <p>Sending reset link...</p>
+                </div>
+              </div>
+            )}
+            
             <div className="logo">
                 <span className='logo-purple'>BOOGI</span>
                 <span className='logo-gold'>NOIRE</span>

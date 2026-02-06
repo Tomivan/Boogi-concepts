@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { 
   showSuccessAlert, 
-  showErrorAlert, 
-  showLoadingAlert,
-  closeAlert 
+  showErrorAlert
 } from '../../utils/alert';
 import './contact-form.component.css';
 
@@ -20,6 +18,7 @@ const ContactForm = () => {
     });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
+  const [showSendingLoader, setShowSendingLoader] = useState(false);
 
   const redirectToHomepage = () => navigate("/");
 
@@ -34,7 +33,7 @@ const ContactForm = () => {
     if (isSubmitting) return;
     
     setIsSubmitting(true);
-    showLoadingAlert('Sending Message', 'Please wait while we send your message...');
+    setShowSendingLoader(true);
 
     try {
       const functions = getFunctions();
@@ -47,7 +46,7 @@ const ContactForm = () => {
         message: formData.message
       });
 
-      closeAlert();
+      setShowSendingLoader(false);
       showSuccessAlert(
         'Message Sent!', 
         'Thank you for contacting us. We\'ll get back to you soon.',
@@ -62,7 +61,7 @@ const ContactForm = () => {
       }, 3500);
       
     } catch (error) {
-      closeAlert();
+      setShowSendingLoader(false);
       showErrorAlert(
         'Message Failed', 
         'We couldn\'t send your message. Please check your connection and try again.'
@@ -75,6 +74,16 @@ const ContactForm = () => {
   
     return (
         <div className='component'>
+            {/* Sending Message Loader Overlay */}
+            {showSendingLoader && (
+              <div className="contact-overlay-loader">
+                <div className="contact-overlay-container">
+                  <div className="contact-overlay-spinner"></div>
+                  <p>Sending your message...</p>
+                </div>
+              </div>
+            )}
+            
             <div className="logo" onClick={redirectToHomepage}>
                 <span className='logo-purple'>BOOGI</span>
                 <span className='logo-gold'>NOIRE</span>

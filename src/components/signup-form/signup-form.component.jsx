@@ -4,7 +4,7 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from "../../firebase";
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { showErrorAlert, showSuccessAlert, showLoadingAlert, closeAlert } from '../../utils/alert';
+import { showErrorAlert, showSuccessAlert } from '../../utils/alert';
 import './signup-form.component.css';
 
 const SignupForm = () => {
@@ -13,6 +13,7 @@ const SignupForm = () => {
     const [fullName, setFullName] = useState('');
     const [passwordError, setPasswordError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showCreatingLoader, setShowCreatingLoader] = useState(false);
     const navigate = useNavigate();
 
     const validatePassword = (password) => {
@@ -42,10 +43,9 @@ const SignupForm = () => {
         if (loading) return;
         
         setLoading(true);
-        showLoadingAlert('Creating account...');
+        setShowCreatingLoader(true);
 
         try {
-            // Create user with email/password
             const userCredential = await createUserWithEmailAndPassword(
                 auth,
                 email,
@@ -66,12 +66,12 @@ const SignupForm = () => {
                 createdAt: new Date()
             });
 
-            closeAlert();
+            setShowCreatingLoader(false);
             showSuccessAlert('Welcome!', 'Account created successfully');
             setLoading(false);
             navigate("/login");
         } catch(err) {
-            closeAlert();
+            setShowCreatingLoader(false);
             setLoading(false);
             let errorMessage = 'Signup Failed';
             
@@ -95,6 +95,15 @@ const SignupForm = () => {
 
     return(
         <div className='component'>
+            {showCreatingLoader && (
+                <div className="signup-overlay-loader">
+                    <div className="signup-overlay-container">
+                        <div className="signup-overlay-spinner"></div>
+                        <p>Creating your account...</p>
+                    </div>
+                </div>
+            )}
+            
             <div className="logo">
                 <span className='logo-purple'>BOOGI</span>
                 <span className='logo-gold'>NOIRE</span>

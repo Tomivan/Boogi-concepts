@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { collection, getDocs, query, where, limit, orderBy, getDoc, doc, setDoc, deleteDoc } from 'firebase/firestore';
@@ -7,13 +7,58 @@ import { db } from '../../firebase';
 import { 
   showSuccessAlert, 
   showErrorAlert, 
-  showLoadingAlert,
-  showConfirmAlert,
-  closeAlert 
+  showConfirmAlert
 } from '../../utils/alert';
 import './shop.component.css';
 
 const ADMIN_EMAILS = ['okwuchidavida@gmail.com'];
+const SHOP_CACHE_TTL = 24 * 60 * 60 * 1000;
+
+const createShopCacheManager = () => {
+  let cache = {
+    popular: null,
+    men: null,
+    women: null,
+    allProducts: null,
+    timestamp: null,
+    isValid: false
+  };
+
+  const isCacheValid = () => {
+    if (!cache.timestamp || !cache.isValid) return false;
+    const cacheAge = Date.now() - cache.timestamp;
+    return cacheAge < SHOP_CACHE_TTL;
+  };
+
+  const getCachedData = (key) => {
+    if (isCacheValid()) {
+      return cache[key];
+    }
+    return null;
+  };
+
+  const setCacheData = (popular, men, women, allProducts) => {
+    cache = {
+      popular,
+      men,
+      women,
+      allProducts,
+      timestamp: Date.now(),
+      isValid: true
+    };
+  };
+
+  const invalidateCache = () => {
+    cache.isValid = false;
+  };
+
+  return {
+    getCachedData,
+    setCacheData,
+    invalidateCache,
+    isCacheValid
+  };
+};
 
 const Shop = () => {
     const [menProducts, setMenProducts] = useState([]);
@@ -25,7 +70,6 @@ const Shop = () => {
 
     const isAdmin = currentUser && ADMIN_EMAILS.includes(currentUser.email);
     
-    // State for each carousel
     const [currentIndices, setCurrentIndices] = useState({
         popular: 0,
         men: 0,
@@ -42,7 +86,14 @@ const Shop = () => {
     const [addingProduct, setAddingProduct] = useState(false);
     const [removingProduct, setRemovingProduct] = useState('');
     const [adminMode, setAdminMode] = useState(false);
+    const [actionLoading, setActionLoading] = useState(false);
     const navigate = useNavigate();
+    
+    const cacheManagerRef = useRef(null);
+    if (!cacheManagerRef.current) {
+      cacheManagerRef.current = createShopCacheManager();
+    }
+    const cacheManager = cacheManagerRef.current;
 
     const nextSlide = (section) => {
         const products = 
@@ -90,9 +141,23 @@ const Shop = () => {
         const fetchProducts = async () => {
             try {
                 setLoading(true);
-                showLoadingAlert('Loading Shop', 'Fetching products...');
+                
+                if (cacheManager.isCacheValid()) {
+                    const cachedPopular = cacheManager.getCachedData('popular');
+                    const cachedMen = cacheManager.getCachedData('men');
+                    const cachedWomen = cacheManager.getCachedData('women');
+                    const cachedAllProducts = cacheManager.getCachedData('allProducts');
+                    
+                    if (cachedPopular && cachedMen && cachedWomen && cachedAllProducts) {
+                        setPopularProducts(cachedPopular);
+                        setMenProducts(cachedMen);
+                        setWomenProducts(cachedWomen);
+                        setAllProducts(cachedAllProducts);
+                        setLoading(false);
+                        return;
+                    }
+                }
 
-                // Fetch all products for admin selection
                 const allProductsQuery = query(collection(db, 'products'));
                 const allProductsSnapshot = await getDocs(allProductsQuery);
                 const allProductsData = allProductsSnapshot.docs.map(doc => ({
@@ -101,7 +166,6 @@ const Shop = () => {
                 }));
                 setAllProducts(allProductsData);
 
-                // Fetch popular perfumes
                 const popularQuery = query(collection(db, 'popularPerfumes'), orderBy('rank'));
                 const popularSnapshot = await getDocs(popularQuery);
                 const popularData = await Promise.all(
@@ -113,7 +177,6 @@ const Shop = () => {
                     })
                 );
                 
-                // Fetch men's perfumes
                 const menQuery = query(collection(db, 'mensPerfume'), orderBy('rank'));
                 const menSnapshot = await getDocs(menQuery);
                 const menProductsData = await Promise.all(
@@ -125,7 +188,6 @@ const Shop = () => {
                     })
                 );
                 
-                // Fetch women's perfumes
                 const womenQuery = query(collection(db, 'products'), where('Gender', '==', 'Female'), limit(12));
                 const womenSnapshot = await getDocs(womenQuery);
                 const womenProductsData = womenSnapshot.docs.map(doc => ({
@@ -133,17 +195,32 @@ const Shop = () => {
                     ...doc.data()
                 }));
 
-                setMenProducts(menProductsData.filter(Boolean));
-                setWomenProducts(womenProductsData);
-                setPopularProducts(popularData.filter(Boolean));
+                const filteredPopular = popularData.filter(Boolean);
+                const filteredMen = menProductsData.filter(Boolean);
                 
-                closeAlert();
+                setPopularProducts(filteredPopular);
+                setMenProducts(filteredMen);
+                setWomenProducts(womenProductsData);
+                
+                cacheManager.setCacheData(filteredPopular, filteredMen, womenProductsData, allProductsData);
+                
                 if (isAdmin) {
                     showSuccessAlert('Shop Loaded', 'Products are ready for display.', 1500);
                 }
             } catch (error) {
-                closeAlert();
-                showErrorAlert('Load Failed', 'Failed to load products. Please refresh the page.');
+                console.error('Error fetching shop products:', error);
+                
+                const cachedPopular = cacheManager.getCachedData('popular');
+                const cachedMen = cacheManager.getCachedData('men');
+                const cachedWomen = cacheManager.getCachedData('women');
+                
+                if (cachedPopular && cachedMen && cachedWomen) {
+                    setPopularProducts(cachedPopular);
+                    setMenProducts(cachedMen);
+                    setWomenProducts(cachedWomen);
+                } else {
+                    showErrorAlert('Load Failed', 'Failed to load products. Please refresh the page.');
+                }
             } finally {
                 setLoading(false);
             }
@@ -161,7 +238,7 @@ const Shop = () => {
         
         try {
             setAddingProduct(true);
-            showLoadingAlert('Adding Product', 'Adding product to section...');
+            setActionLoading(true);
             
             const productRef = doc(db, 'products', selectedProduct);
             const rank = section === 'popular' ? popularProducts.length + 1 : 
@@ -183,24 +260,36 @@ const Shop = () => {
             const productSnap = await getDoc(productRef);
             const productData = productSnap.data();
             
+            let updatedPopular = [...popularProducts];
+            let updatedMen = [...menProducts];
+            let updatedWomen = [...womenProducts];
+            
+            const newProduct = { id: selectedProduct, ...productData };
+            
             if (section === 'popular') {
-                setPopularProducts(prev => [...prev, { id: selectedProduct, ...productData }]);
+                updatedPopular = [...updatedPopular, newProduct];
+                setPopularProducts(updatedPopular);
             } else if (section === 'men') {
-                setMenProducts(prev => [...prev, { id: selectedProduct, ...productData }]);
+                updatedMen = [...updatedMen, newProduct];
+                setMenProducts(updatedMen);
             } else {
-                setWomenProducts(prev => [...prev, { id: selectedProduct, ...productData }]);
+                updatedWomen = [...updatedWomen, newProduct];
+                setWomenProducts(updatedWomen);
             }
+            
+            // Update cache with new data
+            cacheManager.setCacheData(updatedPopular, updatedMen, updatedWomen, allProducts);
             
             setSelectedProduct('');
             
-            closeAlert();
+            setActionLoading(false);
             showSuccessAlert(
                 'Product Added!', 
                 `Product added to ${section} section successfully.`,
                 1500
             );
         } catch (error) {
-            closeAlert();
+            setActionLoading(false);
             showErrorAlert('Add Failed', 'Failed to add product. Please try again.');
         } finally {
             setAddingProduct(false);
@@ -224,7 +313,7 @@ const Shop = () => {
         
         try {
             setRemovingProduct(productId);
-            showLoadingAlert('Removing Product', 'Removing from section...');
+            setActionLoading(true);
             
             // Remove from the appropriate collection
             const sectionCollection = 
@@ -235,22 +324,32 @@ const Shop = () => {
             await deleteDoc(doc(db, sectionCollection, productId));
             
             // Update state
+            let updatedPopular = [...popularProducts];
+            let updatedMen = [...menProducts];
+            let updatedWomen = [...womenProducts];
+            
             if (section === 'popular') {
-                setPopularProducts(prev => prev.filter(p => p.id !== productId));
+                updatedPopular = updatedPopular.filter(p => p.id !== productId);
+                setPopularProducts(updatedPopular);
             } else if (section === 'men') {
-                setMenProducts(prev => prev.filter(p => p.id !== productId));
+                updatedMen = updatedMen.filter(p => p.id !== productId);
+                setMenProducts(updatedMen);
             } else {
-                setWomenProducts(prev => prev.filter(p => p.id !== productId));
+                updatedWomen = updatedWomen.filter(p => p.id !== productId);
+                setWomenProducts(updatedWomen);
             }
             
-            closeAlert();
+            // Update cache with removed data
+            cacheManager.setCacheData(updatedPopular, updatedMen, updatedWomen, allProducts);
+            
+            setActionLoading(false);
             showSuccessAlert(
                 'Product Removed!',
                 `Product removed from ${section} section successfully.`,
                 1500
             );
         } catch (error) {
-            closeAlert();
+            setActionLoading(false);
             showErrorAlert('Remove Failed', 'Failed to remove product. Please try again.');
         } finally {
             setRemovingProduct('');
@@ -274,6 +373,49 @@ const Shop = () => {
         setAdminMode(!adminMode);
     };
 
+    const handleClearCache = () => {
+        cacheManager.invalidateCache();
+        showSuccessAlert('Cache Cleared', 'Shop cache has been cleared.', 1500);
+    };
+
+    // Loader Components
+    const Loader = ({ size = 'small', inline = false, color = 'primary' }) => (
+        <div className={`loader ${size} ${inline ? 'inline-loader' : ''} ${color}`}>
+            <div className="loader-spinner"></div>
+        </div>
+    );
+
+    const CarouselSkeleton = () => (
+        <div className="perfume-carousel-container">
+            <button className="carousel-arrow left-arrow" disabled>
+                <FaChevronLeft />
+            </button>
+            <div className="perfumes skeleton-carousel">
+                {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="perfume skeleton-perfume">
+                        <div className="skeleton-image"></div>
+                        <div className="skeleton-content">
+                            <div className="skeleton-title"></div>
+                            <div className="skeleton-price"></div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <button className="carousel-arrow right-arrow" disabled>
+                <FaChevronRight />
+            </button>
+        </div>
+    );
+
+    const ActionLoaderOverlay = () => (
+        <div className="action-loader-overlay">
+            <div className="action-loader-container">
+                <Loader size="large" />
+                <p>Processing...</p>
+            </div>
+        </div>
+    );
+
     const renderAdminControls = (section) => {
         if (!isAdmin || !adminMode) return null;
         
@@ -283,7 +425,7 @@ const Shop = () => {
                     value={selectedProduct}
                     onChange={(e) => setSelectedProduct(e.target.value)}
                     className='admin-select'
-                    disabled={addingProduct}
+                    disabled={addingProduct || actionLoading}
                 >
                     <option value="">Select a product</option>
                     {allProducts.map(product => (
@@ -294,12 +436,12 @@ const Shop = () => {
                 </select>
                 <button 
                     onClick={() => addToSection(section)}
-                    disabled={!selectedProduct || addingProduct}
+                    disabled={!selectedProduct || addingProduct || actionLoading}
                     className="add-button"
                 >
                     {addingProduct ? (
                         <>
-                            <span className="button-loader"></span>
+                            <Loader inline size="small" color="light" />
                             Adding...
                         </>
                     ) : (
@@ -318,7 +460,7 @@ const Shop = () => {
                 <button 
                     className="carousel-arrow left-arrow" 
                     onClick={() => prevSlide(section)}
-                    disabled={currentIndices[section] === 0 || loading}
+                    disabled={currentIndices[section] === 0 || loading || actionLoading}
                 >
                     <FaChevronLeft />
                 </button>
@@ -326,7 +468,7 @@ const Shop = () => {
                 <div className="perfumes">
                     {loading ? (
                         <div className="carousel-loading">
-                            <div className="carousel-loader"></div>
+                            <Loader size="medium" />
                             <p>Loading {section} products...</p>
                         </div>
                     ) : products.slice(
@@ -339,9 +481,10 @@ const Shop = () => {
                                     className="remove-button"
                                     onClick={() => removeFromSection(section, product.id)}
                                     title="Remove from section"
+                                    disabled={removingProduct === product.id || actionLoading}
                                 >
                                     {removingProduct === product.id ? (
-                                        <div className="removing-loader"></div>
+                                        <Loader inline size="small" color="light" />
                                     ) : (
                                         <FaTimes />
                                     )}
@@ -364,7 +507,7 @@ const Shop = () => {
                 <button 
                     className="carousel-arrow right-arrow" 
                     onClick={() => nextSlide(section)}
-                    disabled={currentIndices[section] >= products.length - productsPerPage[section] || loading}
+                    disabled={currentIndices[section] >= products.length - productsPerPage[section] || loading || actionLoading}
                 >
                     <FaChevronRight />
                 </button>
@@ -375,7 +518,7 @@ const Shop = () => {
     if (loading) {
         return (
             <div className="shop-loading">
-                <div className="shop-loader"></div>
+                <Loader size="large" />
                 <p>Loading shop...</p>
             </div>
         );
@@ -383,15 +526,27 @@ const Shop = () => {
 
     return (
         <div className="shop">
+            {actionLoading && <ActionLoaderOverlay />}
+
             {isAdmin && (
                 <div className="admin-mode-toggle">
                     <button 
                         onClick={toggleAdminMode} 
                         className="admin-mode"
-                        disabled={loading}
+                        disabled={loading || actionLoading}
                     >
                         <FaEdit /> {adminMode ? 'Exit Admin Mode' : 'Enter Admin Mode'}
                     </button>
+                    {adminMode && (
+                        <button 
+                            onClick={handleClearCache}
+                            className="clear-cache-button"
+                            title="Clear shop cache"
+                            disabled={actionLoading}
+                        >
+                            🗑️ Clear Cache
+                        </button>
+                    )}
                 </div>
             )}
             

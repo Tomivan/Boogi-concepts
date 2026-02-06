@@ -185,9 +185,3 @@ label:hover {
     width: 25px;
   }
 }
-
-@media screen and (min-width: 1024px) {
-  .component.brand {
-    min-height: 400px;
-  }
-}

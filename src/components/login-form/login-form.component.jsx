@@ -2,29 +2,33 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebase';
-import { showErrorAlert, showSuccessAlert, showLoadingAlert, closeAlert } from '../../utils/alert';
+import { showErrorAlert, showSuccessAlert } from '../../utils/alert';
 import './login-form.component.css';
 
 const LoginForm = () => {
     const [email,setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [showLoginLoader, setShowLoginLoader] = useState(false);
     const navigate = useNavigate();
 
     const handleLogin = async(e) => {
         e.preventDefault();
         setError('');
-        showLoadingAlert('Signing in...');
+        setLoading(true);
+        setShowLoginLoader(true);
 
         try {
             await signInWithEmailAndPassword(auth, email, password)
-            closeAlert();
+            setShowLoginLoader(false);
             showSuccessAlert('Welcome back!', 'You have successfully logged in');
             navigate("/")
         } catch(err) {
-            closeAlert();
-            showErrorAlert('Login Failed', getErrorMessage(error.code));
+            setShowLoginLoader(false);
+            const errorMessage = getErrorMessage(err.code);
+            setError(errorMessage);
+            showErrorAlert('Login Failed', errorMessage);
         } finally {
             setLoading(false)
         }
@@ -45,6 +49,16 @@ const LoginForm = () => {
     }
     return(
         <div className="component">
+            {/* Login Loader Overlay */}
+            {showLoginLoader && (
+                <div className="login-overlay-loader">
+                    <div className="login-overlay-container">
+                        <div className="login-overlay-spinner"></div>
+                        <p>Signing in...</p>
+                    </div>
+                </div>
+            )}
+            
             <div className="logo">
                 <span className='logo-purple'>BOOGI</span>
                 <span className='logo-gold'>NOIRE</span>
@@ -58,6 +72,7 @@ const LoginForm = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={loading}
                 />
                 <label>Password</label>
                 <input 
@@ -66,9 +81,15 @@ const LoginForm = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    disabled={loading}
                 />
                 <button className='login-button' disabled={loading}>
-                    {loading ? 'Logging in...' : 'Login'}
+                    {loading ? (
+                        <>
+                            <span className="button-loader"></span>
+                            Logging in...
+                        </>
+                    ) : 'Login'}
                 </button>
                 <sub>
                     <Link to='/forgot-password' className='purple'>Reset Password</Link>

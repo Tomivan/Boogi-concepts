@@ -5,9 +5,7 @@ import { faCartPlus, faTrash, faMinus, faPlus } from '@fortawesome/free-solid-sv
 import { useState } from 'react';
 import { 
   showSuccessAlert,
-  showLoadingAlert, 
-  showConfirmAlert,
-  closeAlert 
+  showConfirmAlert
 } from '../../utils/alert';
 import './cart.component.css';
 
@@ -25,15 +23,18 @@ const Cart = () => {
   const [isClearing, setIsClearing] = useState(false);
   const [removingItem, setRemovingItem] = useState(null);
   const [updatingQuantity, setUpdatingQuantity] = useState(null);
+  const [showCheckoutLoader, setShowCheckoutLoader] = useState(false);
+  const [showRemoveLoader, setShowRemoveLoader] = useState(false);
+  const [showClearLoader, setShowClearLoader] = useState(false);
 
   const goToHomepage = () => navigate("/");
   
   const moveToCheckout = () => {
     setIsProcessing(true);
-    showLoadingAlert('Preparing Checkout', 'Redirecting to checkout...');
+    setShowCheckoutLoader(true);
     
     setTimeout(() => {
-      closeAlert();
+      setShowCheckoutLoader(false);
       navigate("/checkout", { state: { cartItems, cartTotal } });
       setIsProcessing(false);
     }, 500);
@@ -62,13 +63,12 @@ const Cart = () => {
     if (!item) return;
     
     setRemovingItem(itemId);
-    
-    showLoadingAlert('Removing Item', 'Removing from cart...');
+    setShowRemoveLoader(true);
     
     setTimeout(() => {
       removeFromCart(itemId);
       setRemovingItem(null);
-      closeAlert();
+      setShowRemoveLoader(false);
       showSuccessAlert(
         'Item Removed', 
         `${item.Name || item.name} has been removed from your cart.`,
@@ -87,12 +87,12 @@ const Cart = () => {
     
     if (result.isConfirmed) {
       setIsClearing(true);
-      showLoadingAlert('Clearing Cart', 'Removing all items...');
+      setShowClearLoader(true);
       
       setTimeout(() => {
         clearCart();
         setIsClearing(false);
-        closeAlert();
+        setShowClearLoader(false);
         showSuccessAlert(
           'Cart Cleared!',
           'All items have been removed from your cart.',
@@ -151,9 +151,39 @@ const Cart = () => {
     );
   }
 
-  if (cartItems.length === 0) {
-    return (
-      <div className='component'>
+  return (
+    <div className='component'>
+      {/* Checkout Loader Overlay */}
+      {showCheckoutLoader && (
+        <div className="cart-overlay-loader">
+          <div className="cart-overlay-container">
+            <div className="cart-overlay-spinner"></div>
+            <p>Preparing checkout...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Item Loader Overlay */}
+      {showRemoveLoader && (
+        <div className="cart-overlay-loader">
+          <div className="cart-overlay-container">
+            <div className="cart-overlay-spinner"></div>
+            <p>Removing item...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Cart Loader Overlay */}
+      {showClearLoader && (
+        <div className="cart-overlay-loader">
+          <div className="cart-overlay-container">
+            <div className="cart-overlay-spinner"></div>
+            <p>Clearing cart...</p>
+          </div>
+        </div>
+      )}
+
+      {cartItems.length === 0 ? (
         <div className="empty">
           <FontAwesomeIcon icon={faCartPlus} className='cart' />
           <p>Your cart is empty</p>
@@ -161,112 +191,110 @@ const Cart = () => {
             Shop for Perfumes
           </button>
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className='component'>
-      <h1 className='cart-h1'>Cart</h1>
-      <hr />
-      
-      {cartItems.map(item => (
-        <section className="perfume-in-cart" key={item.id}>
-          <div className="top">
-            <div className="cart-left">
-              <img 
-                src={item.ImageUrl || item.image} 
-                alt={item.Name || item.name} 
-                loading="lazy"
-                className='cart-perfume'
-                width="150"
-                height="150"
-              />
-              <div className="left-detail">
-                <p>{item.Name || item.name}</p>
-                <p>Brand: {item['Brand Name'] || item.Brand || 'No brand specified'}</p>
-              </div>
-            </div>
-            <div className="cart-right">
-              <p><strong>₦{(item.price * item.quantity).toLocaleString()}</strong></p>
-            </div>
-          </div>
-          <div className="bottom">
-            <div 
-              className={`remove ${removingItem === item.id ? 'removing' : ''}`} 
-              onClick={() => handleRemove(item.id)}
-            >
-              {removingItem === item.id ? (
-                <>
-                  <div className="removing-loader"></div>
-                  <p>Removing...</p>
-                </>
-              ) : (
-                <>
-                  <FontAwesomeIcon icon={faTrash} className='trash'/>
-                  <p>Remove</p>
-                </>
-              )}
-            </div>
-            <div className="counter">
-              <button 
-                className="counter-btn minus-btn"
-                onClick={() => handleDecrement(item)}
-                disabled={updatingQuantity === item.id}
-              >
-                {updatingQuantity === item.id ? (
-                  <div className="counter-loader"></div>
-                ) : (
-                  <FontAwesomeIcon icon={faMinus} />
-                )}
-              </button>
-              <p><strong>{item.quantity}</strong></p>
-              <button 
-                className="counter-btn plus-btn"
-                onClick={() => handleIncrement(item)}
-                disabled={updatingQuantity === item.id}
-              >
-                {updatingQuantity === item.id ? (
-                  <div className="counter-loader"></div>
-                ) : (
-                  <FontAwesomeIcon icon={faPlus} />
-                )}
-              </button>
-            </div>
-          </div>
+      ) : (
+        <>
+          <h1 className='cart-h1'>Cart</h1>
           <hr />
-        </section>
-      ))}
-      
-      <section className='cart-total'>
-        <div className="total-actions">
-          <button 
-            className='clear-cart' 
-            onClick={handleClearCart}
-            disabled={isClearing}
-          >
-            {isClearing ? (
-              <>
-                <span className="button-loader"></span>
-                Clearing...
-              </>
-            ) : 'Clear Cart'}
-          </button>
-          <p><strong>Total: </strong>₦{cartTotal.toLocaleString()}</p>
-        </div>
-        <button 
-          className='checkout' 
-          onClick={moveToCheckout}
-          disabled={isProcessing}
-        >
-          {isProcessing ? (
-            <>
-              <span className="button-loader"></span>
-              Processing...
-            </>
-          ) : 'Proceed to Checkout'}
-        </button>
-      </section>
+          
+          {cartItems.map(item => (
+            <section className="perfume-in-cart" key={item.id}>
+              <div className="top">
+                <div className="cart-left">
+                  <img 
+                    src={item.ImageUrl || item.image} 
+                    alt={item.Name || item.name} 
+                    loading="lazy"
+                    className='cart-perfume'
+                    width="150"
+                    height="150"
+                  />
+                  <div className="left-detail">
+                    <p>{item.Name || item.name}</p>
+                    <p>Brand: {item['Brand Name'] || item.Brand || 'No brand specified'}</p>
+                  </div>
+                </div>
+                <div className="cart-right">
+                  <p><strong>₦{(item.price * item.quantity).toLocaleString()}</strong></p>
+                </div>
+              </div>
+              <div className="bottom">
+                <div 
+                  className={`remove ${removingItem === item.id ? 'removing' : ''}`} 
+                  onClick={() => handleRemove(item.id)}
+                >
+                  {removingItem === item.id ? (
+                    <>
+                      <div className="removing-loader"></div>
+                      <p>Removing...</p>
+                    </>
+                  ) : (
+                    <>
+                      <FontAwesomeIcon icon={faTrash} className='trash'/>
+                      <p>Remove</p>
+                    </>
+                  )}
+                </div>
+                <div className="counter">
+                  <button 
+                    className="counter-btn minus-btn"
+                    onClick={() => handleDecrement(item)}
+                    disabled={updatingQuantity === item.id}
+                  >
+                    {updatingQuantity === item.id ? (
+                      <div className="counter-loader"></div>
+                    ) : (
+                      <FontAwesomeIcon icon={faMinus} />
+                    )}
+                  </button>
+                  <p><strong>{item.quantity}</strong></p>
+                  <button 
+                    className="counter-btn plus-btn"
+                    onClick={() => handleIncrement(item)}
+                    disabled={updatingQuantity === item.id}
+                  >
+                    {updatingQuantity === item.id ? (
+                      <div className="counter-loader"></div>
+                    ) : (
+                      <FontAwesomeIcon icon={faPlus} />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <hr />
+            </section>
+          ))}
+          
+          <section className='cart-total'>
+            <div className="total-actions">
+              <button 
+                className='clear-cart' 
+                onClick={handleClearCart}
+                disabled={isClearing}
+              >
+                {isClearing ? (
+                  <>
+                    <span className="button-loader"></span>
+                    Clearing...
+                  </>
+                ) : 'Clear Cart'}
+              </button>
+              <p><strong>Total: </strong>₦{cartTotal.toLocaleString()}</p>
+            </div>
+            <button 
+              className='checkout' 
+              onClick={moveToCheckout}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <>
+                  <span className="button-loader"></span>
+                  Processing...
+                </>
+              ) : 'Proceed to Checkout'}
+            </button>
+          </section>
+        </>
+      )}
     </div>
   );
 };

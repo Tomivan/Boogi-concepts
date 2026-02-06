@@ -8,9 +8,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { 
   showSuccessAlert, 
-  showErrorAlert, 
-  showLoadingAlert, 
-  closeAlert 
+  showErrorAlert
 } from '../../utils/alert';
 import './delivery.component.css';
 
@@ -32,21 +30,72 @@ const Delivery = () => {
   const { isAdmin } = useAuth();
   const functions = getFunctions();
   
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    address: '',
-    city: '',
-    state: 'Lagos',
-    lga: '',
-    phone: '',
-    email: '',
-    instructions: ''
+  // Load saved form data from localStorage
+  const loadSavedFormData = () => {
+    const savedData = localStorage.getItem('deliveryFormData');
+    if (savedData) {
+      try {
+        return JSON.parse(savedData);
+      } catch (error) {
+        console.error('Error parsing saved form data:', error);
+        return null;
+      }
+    }
+    return null;
+  };
+
+  // Save form data to localStorage
+  const saveFormData = (data) => {
+    try {
+      localStorage.setItem('deliveryFormData', JSON.stringify(data));
+    } catch (error) {
+      console.error('Error saving form data:', error);
+    }
+  };
+
+  // Clear saved form data
+  const clearSavedFormData = () => {
+    localStorage.removeItem('deliveryFormData');
+  };
+
+  const [formData, setFormData] = useState(() => {
+    const savedData = loadSavedFormData();
+    return savedData || {
+      firstName: '',
+      lastName: '',
+      address: '',
+      city: '',
+      state: 'Lagos',
+      lga: '',
+      phone: '',
+      email: '',
+      instructions: ''
+    };
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [shippingFees, setShippingFees] = useState({});
   const [loadingFees, setLoadingFees] = useState(true);
+  const [showProcessingLoader, setShowProcessingLoader] = useState(false);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      saveFormData(formData);
+    }, 500); // Debounce to avoid excessive writes
+    
+    return () => clearTimeout(timer);
+  }, [formData]);
+
+  // Clear saved form data on component unmount if payment wasn't processed
+  useEffect(() => {
+    return () => {
+      if (!isProcessing) {
+        // Keep the data saved when user navigates away
+        // We'll only clear it after successful payment
+      }
+    };
+  }, [isProcessing]);
 
   // Fetch shipping fees from Firestore
   useEffect(() => {
@@ -102,7 +151,7 @@ const Delivery = () => {
 
   const processOrder = async (transaction) => {
     setIsProcessing(true);
-    showLoadingAlert('Processing Order', 'Please wait while we confirm your payment...');
+    setShowProcessingLoader(true);
     
     try {
       const sendOrderConfirmation = httpsCallable(functions, 'sendOrderConfirmation');
@@ -122,8 +171,9 @@ const Delivery = () => {
   
       await sendOrderConfirmation({ orderData });
       
-      closeAlert();
+      setShowProcessingLoader(false);
       clearCart();
+      clearSavedFormData(); // Clear saved form data after successful payment
       
       showSuccessAlert(
         'Order Confirmed!', 
@@ -154,7 +204,7 @@ const Delivery = () => {
       }, 2200);
       
     } catch (error) {
-      closeAlert();
+      setShowProcessingLoader(false);
       
       showErrorAlert(
         'Order Confirmation Failed',
@@ -253,6 +303,16 @@ const Delivery = () => {
 
   return (
     <div className="component">
+      {/* Processing Order Loader Overlay */}
+      {showProcessingLoader && (
+        <div className="delivery-overlay-loader">
+          <div className="delivery-overlay-container">
+            <div className="delivery-overlay-spinner"></div>
+            <p>Processing your order...</p>
+          </div>
+        </div>
+      )}
+
       <div className="header-section">
         <div className="logo" onClick={redirectToHomepage}>
           <span className='logo-purple'>BOOGI</span>
@@ -273,6 +333,35 @@ const Delivery = () => {
       <div className="delivery">
         <form className="delivery-form" onSubmit={(e) => e.preventDefault()}>
           <h1 className='billing-heading'>Billing Details</h1>
+          
+          {/* Form Saved Indicator */}
+          {localStorage.getItem('deliveryFormData') && (
+            <div className="form-saved-indicator">
+              <span className="saved-badge">✓ Form progress saved</span>
+              <button 
+                type="button" 
+                className="clear-form-btn"
+                onClick={() => {
+                  clearSavedFormData();
+                  setFormData({
+                    firstName: '',
+                    lastName: '',
+                    address: '',
+                    city: '',
+                    state: 'Lagos',
+                    lga: '',
+                    phone: '',
+                    email: '',
+                    instructions: ''
+                  });
+                  showSuccessAlert('Form Cleared', 'Your saved form data has been cleared.', 1500);
+                }}
+              >
+                Clear saved data
+              </button>
+            </div>
+          )}
+          
           <div className="form-group">
             <label>First Name</label>
             <input 

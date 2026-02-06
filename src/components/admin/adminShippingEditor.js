@@ -4,9 +4,7 @@ import { db } from '../../firebase';
 import { 
   showSuccessAlert, 
   showErrorAlert, 
-  showLoadingAlert, 
-  showConfirmAlert,
-  closeAlert 
+  showConfirmAlert 
 } from '../../utils/alert';
 import './admin-shipping-editor.css';
 
@@ -18,6 +16,7 @@ const AdminShippingEditor = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [addingArea, setAddingArea] = useState(false);
+  const [showSavingLoader, setShowSavingLoader] = useState(false);
 
   useEffect(() => {
     const fetchShippingFees = async () => {
@@ -42,7 +41,7 @@ const AdminShippingEditor = () => {
     if (saving) return;
     
     setSaving(true);
-    showLoadingAlert('Saving', 'Updating shipping fees...');
+    setShowSavingLoader(true);
     
     try {
       await updateDoc(doc(db, 'config', 'shippingFees'), {
@@ -52,10 +51,10 @@ const AdminShippingEditor = () => {
         }
       });
       
-      closeAlert();
+      setShowSavingLoader(false);
       showSuccessAlert('Success', 'Shipping fees updated successfully!');
     } catch (error) {
-      closeAlert();
+      setShowSavingLoader(false);
       showErrorAlert('Update Failed', 'Failed to update shipping fees. Please try again.');
     } finally {
       setSaving(false);
@@ -129,6 +128,15 @@ const AdminShippingEditor = () => {
 
   return (
     <div className="admin-shipping-editor">
+      {showSavingLoader && (
+        <div className="saving-overlay">
+          <div className="saving-loader-container">
+            <div className="saving-loader"></div>
+            <p>Saving shipping fees...</p>
+          </div>
+        </div>
+      )}
+      
       <h2 className="h2">Shipping Fee Configuration</h2>
       
       <div className="default-fee">

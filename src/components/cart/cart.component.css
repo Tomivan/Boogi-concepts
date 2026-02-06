@@ -1,3 +1,45 @@
+.cart-overlay-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+}
+
+.cart-overlay-container {
+  text-align: center;
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid #e0e0e0;
+  max-width: 300px;
+  width: 90%;
+}
+
+.cart-overlay-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4b0082;
+  border-radius: 50%;
+  animation: cart-spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+.cart-overlay-container p {
+  margin: 0;
+  color: #4b0082;
+  font-weight: 600;
+  font-size: 16px;
+}
+
 .empty {
    text-align: center;
    margin-top: 5%;
@@ -384,6 +426,15 @@ cursor: pointer;
     width: 28px;
     height: 28px;
   }
+  
+  .cart-overlay-spinner {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .cart-overlay-container {
+    padding: 30px;
+  }
 }
 
 @media screen and (min-width: 768px) and (max-width: 1023px) {
@@ -397,5 +448,9 @@ cursor: pointer;
     .skeleton-image {
         width: 140px;
         height: 140px;
+    }
+    .cart-overlay-spinner {
+      width: 45px;
+      height: 45px;
     }
 }

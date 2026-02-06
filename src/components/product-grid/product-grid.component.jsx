@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../../store/cartStore';
 import { useAuth } from '../../context/AuthContext'; 
@@ -10,14 +10,65 @@ import EditPerfumeForm from '../edit-component/edit-perfume.component';
 import { 
   showSuccessAlert, 
   showErrorAlert, 
-  showLoadingAlert,
-  showConfirmAlert,
-  closeAlert 
+  showConfirmAlert
 } from '../../utils/alert';
 import './product-grid.component.css';
 
 const ADMIN_EMAILS = ['okwuchidavida@gmail.com'];
 const PRODUCTS_PER_PAGE = 40;
+const PRODUCTS_CACHE_TTL = 24 * 60 * 60 * 1000;
+
+// Simple cache manager
+const createCacheManager = () => {
+  let cache = {
+    data: null,
+    timestamp: null,
+    filters: null,
+    isValid: false
+  };
+
+  const isCacheValid = (currentFilters) => {
+    if (!cache.timestamp || !cache.isValid) return false;
+    
+    const cacheAge = Date.now() - cache.timestamp;
+    if (cacheAge > PRODUCTS_CACHE_TTL) return false;
+    
+    if (currentFilters) {
+      const cachedFilters = JSON.stringify(cache.filters);
+      const currentFiltersStr = JSON.stringify(currentFilters);
+      return cachedFilters === currentFiltersStr;
+    }
+    
+    return true;
+  };
+
+  const getCachedData = (currentFilters) => {
+    if (isCacheValid(currentFilters)) {
+      return cache.data;
+    }
+    return null;
+  };
+
+  const setCacheData = (data, filters = null) => {
+    cache = {
+      data,
+      timestamp: Date.now(),
+      filters,
+      isValid: true
+    };
+  };
+
+  const invalidateCache = () => {
+    cache.isValid = false;
+  };
+
+  return {
+    getCachedData,
+    setCacheData,
+    invalidateCache,
+    isCacheValid
+  };
+};
 
 const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
   const addToCart = useCartStore((state) => state.addToCart);
@@ -34,37 +85,41 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
   const [showEditForm, setShowEditForm] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [actionLoading, setActionLoading] = useState(false);
   const navigate = useNavigate();
+  
+  // Create cache manager instance
+  const cacheManagerRef = useRef(null);
+  if (!cacheManagerRef.current) {
+    cacheManagerRef.current = createCacheManager();
+  }
+  const cacheManager = cacheManagerRef.current;
 
   const isAdmin = currentUser && ADMIN_EMAILS.includes(currentUser.email);
 
-  // Loader Components
-  const Loader = ({ size = 'small', inline = false }) => (
-    <div className={`loader ${size} ${inline ? 'inline-loader' : ''}`}>
-      <div className="loader-spinner"></div>
-    </div>
-  );
+  // Build filter object for cache key
+  const getCurrentFilters = () => {
+    return {
+      genderFilter,
+      brandFilter: brandFilter ? [...brandFilter].sort() : null
+    };
+  };
 
-  const ProductSkeleton = () => (
-    <div className="perfume skeleton-perfume">
-      <div className="skeleton-image"></div>
-      <div className="skeleton-content">
-        <div className="skeleton-title"></div>
-        <div className="skeleton-price"></div>
-        <div className="skeleton-buttons">
-          <div className="skeleton-button"></div>
-          {isAdmin && <div className="skeleton-button small"></div>}
-        </div>
-      </div>
-    </div>
-  );
-
-  // Fetch all products from Firestore
+  // Fetch all products from Firestore with caching
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        showLoadingAlert('Loading', 'Fetching products...');
+        
+        // Check cache first
+        const currentFilters = getCurrentFilters();
+        const cachedData = cacheManager.getCachedData(currentFilters);
+        
+        if (cachedData) {
+          setAllProducts(cachedData);
+          setLoading(false);
+          return;
+        }
         
         let productsQuery = collection(db, 'products');
 
@@ -88,12 +143,14 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
           ...doc.data()
         }));
 
+        // Cache the results
+        cacheManager.setCacheData(productsData, currentFilters);
+        
         setAllProducts(productsData);
         setError(null);
-        closeAlert();
+        
       } catch (err) {
         console.error('Error fetching products:', err);
-        closeAlert();
         showErrorAlert(
           'Load Failed', 
           'Failed to load products. Please check your connection and try again.'
@@ -107,6 +164,7 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
     fetchProducts();
   }, [genderFilter, brandFilter]);
 
+  // Filter products based on search term
   useEffect(() => {
     setFiltering(true);
     
@@ -126,11 +184,11 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
     
     setPage(1);
     
-    // Small delay to show filtering animation
     const timer = setTimeout(() => setFiltering(false), 300);
     return () => clearTimeout(timer);
   }, [searchTerm, allProducts]);
 
+  // Pagination logic
   useEffect(() => {
     if (filteredProducts.length > 0) {
       const startIdx = (page - 1) * PRODUCTS_PER_PAGE;
@@ -147,20 +205,16 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
     if (addingToCart === product.id) return;
     
     setAddingToCart(product.id);
-    showLoadingAlert('Adding to Cart', `Adding ${product.Name} to your cart...`);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate async
       addToCart(product);
       
-      closeAlert();
       showSuccessAlert(
         'Added to Cart!',
         `${product.Name} has been added to your shopping cart.`,
         1500
       );
     } catch (error) {
-      closeAlert();
       showErrorAlert(
         'Add Failed',
         `Failed to add ${product.Name} to cart. Please try again.`
@@ -177,18 +231,22 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
 
   const handleUpdate = async (updatedProduct) => {
     try {
-      showLoadingAlert('Updating', `Saving changes to ${updatedProduct.Name}...`);
+      setActionLoading(true);
       
       // Update in Firebase
       const productRef = doc(db, 'products', updatedProduct.id);
       await updateDoc(productRef, updatedProduct);
       
       // Update local state
-      setAllProducts(allProducts.map(p => 
+      const updatedProducts = allProducts.map(p => 
         p.id === updatedProduct.id ? updatedProduct : p
-      ));
+      );
+      setAllProducts(updatedProducts);
       
-      closeAlert();
+      // Invalidate cache since we modified a product
+      cacheManager.invalidateCache();
+      
+      setActionLoading(false);
       showSuccessAlert(
         'Product Updated!',
         `${updatedProduct.Name} has been updated successfully.`,
@@ -197,7 +255,7 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
       
       setShowEditForm(false);
     } catch (err) {
-      closeAlert();
+      setActionLoading(false);
       console.error('Error updating product:', err);
       showErrorAlert('Update Failed', 'Failed to update product. Please try again.');
     }
@@ -209,16 +267,20 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
 
   const handleAddNew = async (newProduct) => {
     try {
-      showLoadingAlert('Adding Product', `Creating ${newProduct.Name}...`);
+      setActionLoading(true);
       
       // Add to Firebase
       const docRef = await addDoc(collection(db, 'products'), newProduct);
       
       // Update local state with the new ID from Firebase
       const addedProduct = { ...newProduct, id: docRef.id };
-      setAllProducts([...allProducts, addedProduct]);
+      const updatedProducts = [...allProducts, addedProduct];
+      setAllProducts(updatedProducts);
       
-      closeAlert();
+      // Invalidate cache since we added a product
+      cacheManager.invalidateCache();
+      
+      setActionLoading(false);
       showSuccessAlert(
         'Product Added!',
         `${newProduct.Name} has been added to the catalog successfully.`,
@@ -228,10 +290,10 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
       setShowEditForm(false);
       
       // Go to last page where the new product appears
-      const newTotalPages = Math.ceil((allProducts.length + 1) / PRODUCTS_PER_PAGE);
+      const newTotalPages = Math.ceil(updatedProducts.length / PRODUCTS_PER_PAGE);
       setPage(newTotalPages);
     } catch (err) {
-      closeAlert();
+      setActionLoading(false);
       console.error('Error adding product:', err);
       showErrorAlert('Add Failed', 'Failed to add product. Please try again.');
     }
@@ -274,6 +336,37 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
     }
   };
 
+  // Loader Components
+  const Loader = ({ size = 'small', inline = false, color = 'primary' }) => (
+    <div className={`loader ${size} ${inline ? 'inline-loader' : ''} ${color}`}>
+      <div className="loader-spinner"></div>
+    </div>
+  );
+
+  const ProductSkeleton = () => (
+    <div className="perfume skeleton-perfume">
+      <div className="skeleton-image"></div>
+      <div className="skeleton-content">
+        <div className="skeleton-title"></div>
+        <div className="skeleton-price"></div>
+        <div className="skeleton-buttons">
+          <div className="skeleton-button"></div>
+          {isAdmin && <div className="skeleton-button small"></div>}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Action Loader Overlay
+  const ActionLoaderOverlay = () => (
+    <div className="action-loader-overlay">
+      <div className="action-loader-container">
+        <Loader size="large" />
+        <p>Processing...</p>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className='product-management'>
@@ -281,10 +374,6 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
           {Array.from({ length: 8 }).map((_, index) => (
             <ProductSkeleton key={index} />
           ))}
-        </div>
-        <div className="loading-overlay">
-          <Loader size="large" />
-          <p>Loading products...</p>
         </div>
       </div>
     );
@@ -308,11 +397,13 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
 
   return (
     <div className='product-management'>
+      {actionLoading && <ActionLoaderOverlay />}
+
       {isAdmin && (
         <button 
           className="add-product-button"
           onClick={handleAddNewProduct}
-          disabled={filtering}
+          disabled={filtering || actionLoading}
         >
           + Add New Perfume
         </button>
@@ -343,11 +434,11 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
                 <button 
                   className="add-to-cart"
                   onClick={() => handleAddToCart(product)}
-                  disabled={addingToCart === product.id || filtering}
+                  disabled={addingToCart === product.id || filtering || actionLoading}
                 >
                   {addingToCart === product.id ? (
                     <>
-                      <span className="button-loader"></span>
+                      <Loader inline size="small" color="light" />
                       Adding...
                     </>
                   ) : 'Add to Cart'}
@@ -357,7 +448,7 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
                     className="edit-button"
                     onClick={() => handleEdit(product)}
                     aria-label={`Edit ${product.Name}`}
-                    disabled={filtering}
+                    disabled={filtering || actionLoading}
                   >
                     <FontAwesomeIcon icon={faPencil} className='edit-icon' />
                   </button>
@@ -391,7 +482,7 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
             <div className="pagination-controls">
               <button 
                 onClick={handlePrevPage} 
-                disabled={page === 1 || filtering}
+                disabled={page === 1 || filtering || actionLoading}
                 className="pagination-button"
               >
                 <FontAwesomeIcon icon={faChevronLeft} /> Previous
@@ -411,7 +502,7 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
                         <button
                           onClick={() => handlePageJump(pageNum)}
                           className={`page-button ${page === pageNum ? 'active' : ''}`}
-                          disabled={filtering}
+                          disabled={filtering || actionLoading}
                         >
                           {pageNum}
                         </button>
@@ -424,7 +515,7 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
               
               <button 
                 onClick={handleNextPage} 
-                disabled={page === totalPages || filtering}
+                disabled={page === totalPages || filtering || actionLoading}
                 className="pagination-button"
               >
                 Next <FontAwesomeIcon icon={faChevronRight} />
