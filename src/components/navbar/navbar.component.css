@@ -1,7 +1,6 @@
 .topbar {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   height: 60px;
   width: 100%;
   padding: 0 20px;
@@ -88,16 +87,8 @@
   display: block;
 }
 
-.right {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
 .right .link {
   text-decoration: none;
-  display: flex;
-  align-items: center;
   color: #4b0082;
   padding: 0.5rem 0;
   font-weight: 500;
