@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../../store/cartStore'; 
+import { selectCartTotal } from '../../store/cartStore';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCartPlus, faTrash, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
@@ -13,7 +14,7 @@ const Cart = () => {
   const navigate = useNavigate();
   
   const cartItems = useCartStore((state) => state.cartItems);
-  const cartTotal = useCartStore((state) => state.cartTotal);
+  const cartTotal = useCartStore(selectCartTotal);
   const loading = useCartStore((state) => state.loading);
   const removeFromCart = useCartStore((state) => state.removeFromCart);
   const updateQuantity = useCartStore((state) => state.updateQuantity);

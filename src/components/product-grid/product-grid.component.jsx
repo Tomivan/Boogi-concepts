@@ -425,8 +425,8 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
                 alt={product.Name}  
                 onClick={() => redirectToProductDetail(product)}
                 loading="lazy"
-                width="150"
-                height="150"
+                width="200"
+                height="200"
               />
               <p>{product.Name}</p>
               <p>&#8358; {product.Price.toLocaleString()}</p>

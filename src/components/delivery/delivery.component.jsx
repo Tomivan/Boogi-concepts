@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCartStore } from '../../store/cartStore';
+import { useCartStore, selectCartTotal } from '../../store/cartStore';
 import { useAuth } from '../../context/AuthContext';
 import { PaystackButton } from 'react-paystack';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -14,23 +14,17 @@ import './delivery.component.css';
 
 const Delivery = () => {
   const navigate = useNavigate();
+  const saveTimeoutRef = useRef(null);
+  const hasShownRestoredAlert = useRef(false); // Track if we've shown the alert
   
-  const { 
-    cartItems, 
-    cartTotal, 
-    clearCart, 
-    loading: cartLoading 
-  } = useCartStore((state) => ({
-    cartItems: state.cartItems,
-    cartTotal: state.cartTotal,
-    clearCart: state.clearCart,
-    loading: state.loading
-  }));
+  const cartItems = useCartStore((state) => state.cartItems);
+  const cartTotal = useCartStore(selectCartTotal);
+  const clearCart = useCartStore((state) => state.clearCart);
+  const cartLoading = useCartStore((state) => state.loading);
   
   const { isAdmin } = useAuth();
   const functions = getFunctions();
   
-  // Load saved form data from localStorage
   const loadSavedFormData = () => {
     const savedData = localStorage.getItem('deliveryFormData');
     if (savedData) {
@@ -44,7 +38,6 @@ const Delivery = () => {
     return null;
   };
 
-  // Save form data to localStorage
   const saveFormData = (data) => {
     try {
       localStorage.setItem('deliveryFormData', JSON.stringify(data));
@@ -53,7 +46,6 @@ const Delivery = () => {
     }
   };
 
-  // Clear saved form data
   const clearSavedFormData = () => {
     localStorage.removeItem('deliveryFormData');
   };
@@ -78,32 +70,59 @@ const Delivery = () => {
   const [loadingFees, setLoadingFees] = useState(true);
   const [showProcessingLoader, setShowProcessingLoader] = useState(false);
 
+  // Show "Form progress restored" alert on mount if saved data exists
+  useEffect(() => {
+    const savedData = loadSavedFormData();
+    if (savedData && !hasShownRestoredAlert.current) {
+      // Check if the saved data has any filled fields (not just default values)
+      const hasFilledFields = 
+        savedData.firstName || 
+        savedData.lastName || 
+        savedData.address || 
+        savedData.city !== '' || 
+        savedData.lga || 
+        savedData.phone || 
+        savedData.email || 
+        savedData.instructions;
+      
+      if (hasFilledFields) {
+        showSuccessAlert('Form progress restored', 'Your previous form data has been loaded.', 2000);
+        hasShownRestoredAlert.current = true;
+      }
+    }
+  }, []); // Only run once on mount
+
   // Save form data to localStorage whenever it changes
   useEffect(() => {
-    const timer = setTimeout(() => {
-      saveFormData(formData);
-    }, 500); // Debounce to avoid excessive writes
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
     
-    return () => clearTimeout(timer);
+    saveTimeoutRef.current = setTimeout(() => {
+      saveFormData(formData);
+      saveTimeoutRef.current = null;
+    }, 500);
+    
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [formData]);
 
-  // Clear saved form data on component unmount if payment wasn't processed
   useEffect(() => {
     return () => {
       if (!isProcessing) {
         // Keep the data saved when user navigates away
-        // We'll only clear it after successful payment
       }
     };
   }, [isProcessing]);
 
-  // Fetch shipping fees from Firestore
   useEffect(() => {
     const unsubscribe = onSnapshot(doc(db, 'config', 'shippingFees'), (doc) => {
       if (doc.exists()) {
         setShippingFees(doc.data().areas || {});
       } else {
-        // Fallback to default fees if not configured
         setShippingFees({
           'abule egba, iyana ipaja, ikotun, igando, lasu, agege, berger, ketu': 5000,
           'maruwa, lekki, ikate, chisco': 7000,
@@ -173,7 +192,7 @@ const Delivery = () => {
       
       setShowProcessingLoader(false);
       clearCart();
-      clearSavedFormData(); // Clear saved form data after successful payment
+      clearSavedFormData();
       
       showSuccessAlert(
         'Order Confirmed!', 
@@ -266,14 +285,12 @@ const Delivery = () => {
       <option key={area} value={area}>{area}</option>
     ));
 
-  // Loading components
   const Loader = ({ size = 'small', inline = false }) => (
     <div className={`loader ${size} ${inline ? 'inline-loader' : ''}`}>
       <div className="loader-spinner"></div>
     </div>
   );
 
-  // Handle empty cart
   useEffect(() => {
     if (!cartLoading && cartItems.length === 0) {
       showErrorAlert(
@@ -303,7 +320,6 @@ const Delivery = () => {
 
   return (
     <div className="component">
-      {/* Processing Order Loader Overlay */}
       {showProcessingLoader && (
         <div className="delivery-overlay-loader">
           <div className="delivery-overlay-container">
@@ -333,34 +349,6 @@ const Delivery = () => {
       <div className="delivery">
         <form className="delivery-form" onSubmit={(e) => e.preventDefault()}>
           <h1 className='billing-heading'>Billing Details</h1>
-          
-          {/* Form Saved Indicator */}
-          {localStorage.getItem('deliveryFormData') && (
-            <div className="form-saved-indicator">
-              <span className="saved-badge">✓ Form progress saved</span>
-              <button 
-                type="button" 
-                className="clear-form-btn"
-                onClick={() => {
-                  clearSavedFormData();
-                  setFormData({
-                    firstName: '',
-                    lastName: '',
-                    address: '',
-                    city: '',
-                    state: 'Lagos',
-                    lga: '',
-                    phone: '',
-                    email: '',
-                    instructions: ''
-                  });
-                  showSuccessAlert('Form Cleared', 'Your saved form data has been cleared.', 1500);
-                }}
-              >
-                Clear saved data
-              </button>
-            </div>
-          )}
           
           <div className="form-group">
             <label>First Name</label>

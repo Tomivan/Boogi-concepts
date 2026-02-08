@@ -118,6 +118,7 @@ export const useCartStore = create(
           const items = cartSnap.exists() 
             ? (cartSnap.data().items || []).map(item => ({
                 ...item,
+                // Use both possible property names
                 price: parsePrice(item.price || item.Price),
                 quantity: Number(item.quantity) || 1 // Ensure quantity is number
               })) 
@@ -231,6 +232,7 @@ export const useCartStore = create(
           const normalizedProduct = {
             ...product,
             id: productId,
+            // Normalize price property - use both possible names
             price: parsePrice(product.price || product.Price),
             quantity: 1
           };
@@ -314,29 +316,15 @@ export const useCartStore = create(
         }
       },
 
-      // Derived values (computed properties) - optimized
-      get cartTotal() {
-        const { cartItems } = get();
-        if (!cartItems || !Array.isArray(cartItems)) return 0;
-        
-        return cartItems.reduce(
-          (total, item) => total + (Number(item.price) * Number(item.quantity)),
-          0
-        );
-      },
-
-      get cartCount() {
-        const { cartItems } = get();
-        if (!cartItems || !Array.isArray(cartItems)) return 0;
-        
-        return cartItems.reduce(
-          (count, item) => count + Number(item.quantity),
-          0
-        );
+      // Utility method to get item total for display
+      getItemTotal: (item) => {
+        const itemPrice = item.price || item.Price || item.PricePerBottle || 0;
+        const itemQuantity = Number(item.quantity) || 1;
+        return parsePrice(itemPrice) * itemQuantity;
       },
 
       // Get cache status for debugging/UI
-      get cacheStatus() {
+      getCacheStatus: () => {
         const { cache } = get();
         return {
           isCached: get().isCacheValid(),
@@ -362,7 +350,8 @@ export const useCartStore = create(
           state.cartItems = (state.cartItems || []).map(item => ({
             ...item,
             quantity: Number(item.quantity) || 1,
-            price: parsePrice(item.price)
+            // Normalize price on rehydration
+            price: parsePrice(item.price || item.Price || item.PricePerBottle)
           }));
           
           // Validate cache after rehydration
@@ -376,7 +365,29 @@ export const useCartStore = create(
   )
 );
 
-// Utility function for debouncing (optional, can be used in components)
+// CRITICAL: Selector functions for computed values
+export const selectCartTotal = (state) => {
+  if (!state.cartItems || !Array.isArray(state.cartItems)) return 0;
+  
+  return state.cartItems.reduce((total, item) => {
+    const itemPrice = item.price || item.Price || item.PricePerBottle || 0;
+    const itemQuantity = Number(item.quantity) || 1;
+    const parsedPrice = parsePrice(itemPrice);
+    
+    return total + (parsedPrice * itemQuantity);
+  }, 0);
+};
+
+export const selectCartCount = (state) => {
+  if (!state.cartItems || !Array.isArray(state.cartItems)) return 0;
+  
+  return state.cartItems.reduce(
+    (count, item) => count + (Number(item.quantity) || 1),
+    0
+  );
+};
+
+// Utility function for debouncing
 export const createDebouncedCartUpdate = (storeMethod, delay = 300) => {
   let timeoutId;
   return (...args) => {

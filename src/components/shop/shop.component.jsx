@@ -204,9 +204,6 @@ const Shop = () => {
                 
                 cacheManager.setCacheData(filteredPopular, filteredMen, womenProductsData, allProductsData);
                 
-                if (isAdmin) {
-                    showSuccessAlert('Shop Loaded', 'Products are ready for display.', 1500);
-                }
             } catch (error) {
                 console.error('Error fetching shop products:', error);
                 
