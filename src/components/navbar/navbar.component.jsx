@@ -11,7 +11,6 @@ import './navbar.component.css';
 
 const NavbarComponent = () => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [orderCount, setOrderCount] = useState(0);
   const [orderLoading, setOrderLoading] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -35,9 +34,24 @@ const NavbarComponent = () => {
   }, [cartItems]);
 
   useEffect(() => {
-    const storeState = useCartStore.getState();
-    console.log('Store cartCount getter:', storeState.cartCount);
-  }, [cartItems, cartCount]);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        setOrderLoading(true);
+        try {
+          const ordersRef = collection(db, 'orders');
+          const q = query(ordersRef, where('userId', '==', currentUser.uid));
+          const querySnapshot = await getDocs(q);
+          setOrderCount(querySnapshot.size);
+        } catch (error) {
+          console.error('Error fetching orders:', error);
+        } finally {
+          setOrderLoading(false);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -77,27 +91,6 @@ const NavbarComponent = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        setOrderLoading(true);
-        try {
-          const ordersRef = collection(db, 'orders');
-          const q = query(ordersRef, where('userId', '==', currentUser.uid));
-          const querySnapshot = await getDocs(q);
-          setOrderCount(querySnapshot.size);
-        } catch (error) {
-          console.error('Error fetching orders:', error);
-        } finally {
-          setOrderLoading(false);
-        }
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
   const redirectToHomepage = () => {
     navigate("/")
   }
@@ -116,38 +109,6 @@ const NavbarComponent = () => {
       <div className="loader-spinner"></div>
     </div>
   );
-
-  const UserSkeleton = () => (
-    <div className="user-skeleton">
-      <div className="skeleton-avatar"></div>
-      <div className="skeleton-text-container">
-        <div className="skeleton-text short"></div>
-        <div className="skeleton-text shorter"></div>
-      </div>
-    </div>
-  );
-
-  if (loading) {
-    return (
-      <div className="navbar navbar-loading">
-        <Container>
-          <div className="logo" onClick={redirectToHomepage}>
-            <span className='logo-purple'>BOOGI</span>
-            <span className='logo-gold'>NOIRE</span>
-          </div>
-          <div className="navbar-skeleton">
-            <div className="skeleton-nav-item"></div>
-            <div className="skeleton-nav-item"></div>
-            <div className="skeleton-nav-item"></div>
-            <div className="skeleton-nav-item"></div>
-          </div>
-          <div className="right-skeleton">
-            <div className="skeleton-user"></div>
-          </div>
-        </Container>
-      </div>
-    );
-  }
 
   return (
     <nav className="topbar" role="navigation" aria-label="Main navigation">
@@ -205,9 +166,7 @@ const NavbarComponent = () => {
         </div>
         
         <div className="right">
-          {loading ? (
-            <UserSkeleton />
-          ) : user ? (
+          {user ? (
             <div className="user-dropdown" ref={dropdownRef}>
               <span 
                 className="user-welcome" 
@@ -226,7 +185,7 @@ const NavbarComponent = () => {
                   </>
                 ) : (
                   <>
-                    Welcome, {user.displayName || user.email.split('@')[0]}
+                    Welcome, {user.displayName || user.email?.split('@')[0] || 'User'}
                     {orderCount > 0 && (
                       <span className="order-badge" aria-label={`${orderCount} orders`}>
                         {orderLoading ? (
