@@ -15,7 +15,7 @@ import './delivery.component.css';
 const Delivery = () => {
   const navigate = useNavigate();
   const saveTimeoutRef = useRef(null);
-  const hasShownRestoredAlert = useRef(false); // Track if we've shown the alert
+  const hasShownRestoredAlert = useRef(false); 
   
   const cartItems = useCartStore((state) => state.cartItems);
   const cartTotal = useCartStore(selectCartTotal);

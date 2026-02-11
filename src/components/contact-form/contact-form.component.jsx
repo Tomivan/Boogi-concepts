@@ -17,7 +17,6 @@ const ContactForm = () => {
         message: ''
     });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null);
   const [showSendingLoader, setShowSendingLoader] = useState(false);
 
   const redirectToHomepage = () => navigate("/");
@@ -53,7 +52,6 @@ const ContactForm = () => {
         3000
       );
       
-      setSubmitStatus('success');
       setFormData({ firstName: '', lastName: '', phone: '', email: '', message: '' });
       
       setTimeout(() => {
@@ -66,7 +64,6 @@ const ContactForm = () => {
         'Message Failed', 
         'We couldn\'t send your message. Please check your connection and try again.'
       );
-      setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);
     }
@@ -74,7 +71,7 @@ const ContactForm = () => {
   
     return (
         <div className='component'>
-            {/* Sending Message Loader Overlay */}
+
             {showSendingLoader && (
               <div className="contact-overlay-loader">
                 <div className="contact-overlay-container">

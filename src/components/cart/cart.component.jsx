@@ -154,7 +154,7 @@ const Cart = () => {
 
   return (
     <div className='component'>
-      {/* Checkout Loader Overlay */}
+
       {showCheckoutLoader && (
         <div className="cart-overlay-loader">
           <div className="cart-overlay-container">
@@ -164,7 +164,6 @@ const Cart = () => {
         </div>
       )}
 
-      {/* Remove Item Loader Overlay */}
       {showRemoveLoader && (
         <div className="cart-overlay-loader">
           <div className="cart-overlay-container">
@@ -174,7 +173,6 @@ const Cart = () => {
         </div>
       )}
 
-      {/* Clear Cart Loader Overlay */}
       {showClearLoader && (
         <div className="cart-overlay-loader">
           <div className="cart-overlay-container">

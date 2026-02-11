@@ -203,7 +203,7 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
 
   return (
     <div className="edit-perfume-overlay">
-      {/* Image Upload Loader Overlay */}
+
       {showImageUploadLoader && (
         <div className="upload-overlay-loader">
           <div className="upload-overlay-container">

@@ -101,7 +101,6 @@ const ProductDetails = () => {
     }
   };
 
-  // Loader Components
   const Loader = ({ size = 'small', inline = false }) => (
     <div className={`loader ${size} ${inline ? 'inline-loader' : ''}`}>
       <div className="loader-spinner"></div>
@@ -252,7 +251,7 @@ const ProductDetails = () => {
 
   return (
     <div className="product-details">
-      {/* Add to Cart Loader Overlay */}
+
       {showAddToCartLoader && (
         <div className="product-overlay-loader">
           <div className="product-overlay-container">
@@ -262,7 +261,6 @@ const ProductDetails = () => {
         </div>
       )}
 
-      {/* Submit Review Loader Overlay */}
       {showSubmitReviewLoader && (
         <div className="product-overlay-loader">
           <div className="product-overlay-container">

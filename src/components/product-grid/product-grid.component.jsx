@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../../store/cartStore';
 import { useAuth } from '../../context/AuthContext'; 
@@ -18,7 +18,6 @@ const ADMIN_EMAILS = ['okwuchidavida@gmail.com'];
 const PRODUCTS_PER_PAGE = 40;
 const PRODUCTS_CACHE_TTL = 24 * 60 * 60 * 1000;
 
-// Simple cache manager
 const createCacheManager = () => {
   let cache = {
     data: null,
@@ -97,13 +96,13 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
 
   const isAdmin = currentUser && ADMIN_EMAILS.includes(currentUser.email);
 
-  // Build filter object for cache key
-  const getCurrentFilters = () => {
+  // Build filter object for cache key - memoized with useCallback
+  const getCurrentFilters = useCallback(() => {
     return {
       genderFilter,
       brandFilter: brandFilter ? [...brandFilter].sort() : null
     };
-  };
+  }, [genderFilter, brandFilter]);
 
   // Fetch all products from Firestore with caching
   useEffect(() => {
@@ -162,7 +161,7 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
     };
 
     fetchProducts();
-  }, [genderFilter, brandFilter]);
+  }, [genderFilter, brandFilter, cacheManager, getCurrentFilters]);
 
   // Filter products based on search term
   useEffect(() => {
@@ -357,7 +356,6 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
     </div>
   );
 
-  // Action Loader Overlay
   const ActionLoaderOverlay = () => (
     <div className="action-loader-overlay">
       <div className="action-loader-container">

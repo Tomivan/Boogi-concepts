@@ -11,7 +11,6 @@ import './reset-password-form.component.css';
 const ResetPasswordForm = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
@@ -53,7 +52,6 @@ const ResetPasswordForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
 
     if (newPassword !== confirmPassword) {
       showErrorAlert('Password Mismatch', 'Passwords do not match. Please try again.');
@@ -136,7 +134,6 @@ const ResetPasswordForm = () => {
   if (!validLink) {
     return (
       <div className="component">
-        {/* Redirect Loader Overlay */}
         {showRedirectLoader && (
           <div className="reset-overlay-loader">
             <div className="reset-overlay-container">
@@ -166,7 +163,6 @@ const ResetPasswordForm = () => {
 
   return (
     <div className="component">
-      {/* Reset Password Loader Overlay */}
       {showResetLoader && (
         <div className="reset-overlay-loader">
           <div className="reset-overlay-container">
@@ -176,7 +172,6 @@ const ResetPasswordForm = () => {
         </div>
       )}
 
-      {/* Redirect Loader Overlay */}
       {showRedirectLoader && (
         <div className="reset-overlay-loader">
           <div className="reset-overlay-container">

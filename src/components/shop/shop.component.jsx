@@ -224,7 +224,7 @@ const Shop = () => {
         };
 
         fetchProducts();
-    }, [isAdmin]);
+    }, [isAdmin, cacheManager]);
 
     const redirectToProductDetail = (product) => {
         navigate("/product-details", { state: { product } });
@@ -452,6 +452,10 @@ const Shop = () => {
     };
 
     const renderCarousel = (section, products) => {
+        if (loading) {
+            return <CarouselSkeleton />;
+        }
+        
         return (
             <div className="perfume-carousel-container">
                 <button 
@@ -463,12 +467,7 @@ const Shop = () => {
                 </button>
                 
                 <div className="perfumes">
-                    {loading ? (
-                        <div className="carousel-loading">
-                            <Loader size="medium" />
-                            <p>Loading {section} products...</p>
-                        </div>
-                    ) : products.slice(
+                    {products.slice(
                         currentIndices[section], 
                         currentIndices[section] + productsPerPage[section]
                     ).map(product => (
@@ -512,11 +511,38 @@ const Shop = () => {
         );
     };
 
+
     if (loading) {
         return (
-            <div className="shop-loading">
-                <Loader size="large" />
-                <p>Loading shop...</p>
+            <div className="shop">
+                {isAdmin && (
+                    <div className="admin-mode-toggle">
+                        <button className="admin-mode skeleton-button" disabled>
+                            <FaEdit /> Enter Admin Mode
+                        </button>
+                    </div>
+                )}
+                
+                <section className="section">
+                    <h2>Most Popular</h2>
+                    <CarouselSkeleton />
+                </section>
+                
+                <section className="section gender">
+                    <div className="heading">
+                        <h2>Men's Perfume</h2>
+                        <Link to='/men' className='link'>View all</Link>
+                    </div>
+                    <CarouselSkeleton />
+                </section>
+                
+                <section className="section gender">
+                    <div className="heading">
+                        <h2>Women's Perfume</h2>
+                        <Link to='/women' className='link'>View all</Link>
+                    </div>
+                    <CarouselSkeleton />
+                </section>
             </div>
         );
     }

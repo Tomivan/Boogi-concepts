@@ -49,7 +49,6 @@ const LoginForm = () => {
     }
     return(
         <div className="component">
-            {/* Login Loader Overlay */}
             {showLoginLoader && (
                 <div className="login-overlay-loader">
                     <div className="login-overlay-container">

@@ -64,7 +64,7 @@ const ForgotPasswordForm = () => {
 
     return(
         <div className="component">
-            {/* Sending Reset Link Loader Overlay */}
+
             {showSendingLoader && (
               <div className="reset-overlay-loader">
                 <div className="reset-overlay-container">
