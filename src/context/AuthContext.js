@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { 
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Configure your admin emails (can be array for multiple admins)
-  const ADMIN_EMAILS = ['okwuchidavida@gmail.com'];
+  const ADMIN_EMAILS = useMemo(() => ['okwuchidavida@gmail.com'], []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
       setLoading(false);
     });
     return unsubscribe;
-  }, []);
+  }, [ADMIN_EMAILS]);
 
   // Login function
   const login = async (email, password) => {

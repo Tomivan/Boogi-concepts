@@ -10,7 +10,6 @@ const Footer = lazy(() => import('../components/footer/footer.component'));
 
 const Home = () => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [brandFilters, setBrandFilters] = useState([]);
     const [showBottomComponents, setShowBottomComponents] = useState(false);
 
     // Load bottom components when user scrolls near them
@@ -61,7 +60,6 @@ const Home = () => {
                 }>
                     <ProductGrid 
                         searchTerm={searchTerm}
-                        brandFilter={brandFilters}
                     />
                 </Suspense>
             ) : (
