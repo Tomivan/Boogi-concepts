@@ -2,9 +2,7 @@
     margin-top: 2%;
     width: 100%;
 }
-.width{
-    width: 100%;
-}
+
 .content{
     position: absolute;
     top: 50%;
@@ -31,6 +29,7 @@ h2{
     }
     .width{
         width: 90vw;
+        height: auto;
     }
     .content{
         display: none;
@@ -45,5 +44,6 @@ h2{
     .width {
         width: 90vw;
         margin-top: 5%;
+        height: auto;
     }
 }
