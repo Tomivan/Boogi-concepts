@@ -12,7 +12,7 @@ const HeroSection = () => {
             <div class="carousel-inner">
                 <Carousel fade>
                     <Carousel.Item>
-                        <img src={Background} alt='a white perfume in a white background' loading='lazy' fetchPriority='high' height="500" width="100%" className='width'/>
+                        <img src={Background} alt='a white perfume in a white background' fetchPriority='high' height="500" width="100%" className='width'/>
                     </Carousel.Item>
                     <Carousel.Item>
                         <img src={Background1} alt='a red perfume in a red background' loading='lazy' fetchPriority='auto' height="500" width="100%" className='width'/>
