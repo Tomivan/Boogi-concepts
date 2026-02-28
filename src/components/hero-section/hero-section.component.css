@@ -2,26 +2,6 @@
     margin-top: 2%;
     width: 100%;
 }
-.carousel-image-wrapper {
-    position: relative;
-    height: 500px;
-    width: 100%;
-}
-
-.carousel-image-wrapper::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5); 
-    pointer-events: none; 
-}
-
-.carousel-image-wrapper img {
-    object-fit: cover;
-}
 
 .content{
     position: absolute;
