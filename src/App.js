@@ -1,6 +1,7 @@
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './components/CartProvider';
 import Pages from './pages';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
 function App() {
