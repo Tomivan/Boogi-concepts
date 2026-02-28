@@ -321,6 +321,10 @@
 }
 
 @media screen and (max-width: 767px) {
+    h2 
+    {
+        font-size: 1.5rem;
+    }
     .admin-mode{
         width: 50vw;
     }
@@ -333,7 +337,7 @@
     }
     .shop .perfume {
         width: 62vw;
-        height: 42vh;
+        height: 48vh;
         margin-left: 3%;
     }
     .perfume img {
