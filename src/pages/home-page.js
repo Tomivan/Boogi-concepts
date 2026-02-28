@@ -1,45 +1,41 @@
-import { useState, Suspense, lazy, useEffect } from 'react';
+import { useState, Suspense, lazy, useEffect, useRef } from 'react';
 import NavbarComponent from '../components/navbar/navbar.component';
 import Search from '../components/search/search.component';
+import HeroSection from '../components/hero-section/hero-section.component';
 
 const Shop = lazy(() => import('../components/shop/shop.component'));
 const ProductGrid = lazy(() => import('../components/product-grid/product-grid.component'));
-const HeroSection = lazy(() => import('../components/hero-section/hero-section.component'));
 const ContactUs = lazy(() => import('../components/contact-us/contact-us.component'));
 const Footer = lazy(() => import('../components/footer/footer.component'));
 
 const Home = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showBottomComponents, setShowBottomComponents] = useState(false);
+    const bottomRef = useRef(null);
 
     // Load bottom components when user scrolls near them
     useEffect(() => {
-        const handleScroll = () => {
-            const scrollPosition = window.innerHeight + window.pageYOffset;
-            const pageHeight = document.documentElement.scrollHeight;
-            
-            if (scrollPosition > pageHeight * 0.7 && !showBottomComponents) {
-                setShowBottomComponents(true);
-            }
-        };
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setShowBottomComponents(true);
+                    observer.disconnect();
+                }
+            },
+            { rootMargin: '400px' }
+        );
 
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [showBottomComponents]);
+        if (bottomRef.current) observer.observe(bottomRef.current);
+        return () => observer.disconnect();
+    }, []);
 
     // Prefetch components based on user interaction
     useEffect(() => {
-        const prefetchComponents = async () => {
-            if (!searchTerm) {
-                import('../components/shop/shop.component');
-                import('../components/hero-section/hero-section.component');
-            }
-        };
-
-        const timer = setTimeout(prefetchComponents, 1000);
+        const timer = setTimeout(() => {
+            import('../components/shop/shop.component');
+        }, 3000); // give the page time to settle first
         return () => clearTimeout(timer);
-    }, [searchTerm]);
+    }, []);
 
     return (
         <div className='component'>
@@ -64,13 +60,7 @@ const Home = () => {
                 </Suspense>
             ) : (
                 <>
-                    <Suspense fallback={
-                        <div className="hero-skeleton">
-                            <div className="skeleton-hero-image"></div>
-                        </div>
-                    }>
-                        <HeroSection />
-                    </Suspense>
+                    <HeroSection />
                     
                     <Suspense fallback={
                         <div className="shop-skeleton">
@@ -99,20 +89,17 @@ const Home = () => {
                 </>
             )}
             
-            {showBottomComponents ? (
+            <div ref={bottomRef} />
+            
+            {showBottomComponents && (
                 <>
                     <Suspense fallback={<div className="contact-skeleton">Loading contact...</div>}>
                         <ContactUs />
                     </Suspense>
-                    
                     <Suspense fallback={<div className="footer-skeleton">Loading footer...</div>}>
                         <Footer />
                     </Suspense>
                 </>
-            ) : (
-                <div className="bottom-placeholder">
-                    <div className="scroll-hint">Scroll to see more</div>
-                </div>
             )}
         </div>
     );

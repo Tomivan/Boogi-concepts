@@ -1,51 +1,114 @@
-import Carousel from 'react-bootstrap/Carousel';
-import Background from '../../assets/images/background.webp';
-import Background1 from '../../assets/images/background-1.webp';
-import Background2 from '../../assets/images/background-2.webp';
-import Background3 from '../../assets/images/background-3.webp';
-import Background5 from '../../assets/images/background-5.webp';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import './hero-section.component.css';
 
+import Background from '../../assets/images/background.webp';
+
+const slides = [
+    { src: () => import('../../assets/images/background.webp'),   alt: 'a white perfume in a white background',        eager: true  },
+    { src: () => import('../../assets/images/background-1.webp'), alt: 'a red perfume in a red background',            eager: false },
+    { src: () => import('../../assets/images/background-2.webp'), alt: 'a woman with the eiffel tower background',     eager: false },
+    { src: () => import('../../assets/images/background-3.webp'), alt: 'a perfume bottle with a nightclub background', eager: false },
+    { src: () => import('../../assets/images/background-5.webp'), alt: 'a black perfume in a black background',        eager: false },
+];
+
 const HeroSection = () => {
-    return(
-        <div id="carouselExampleAutoplaying" className="carousel slide" data-bs-ride="carousel">
-            <div className="carousel-inner">
-                <Carousel fade>
-                    <Carousel.Item>
-                        <div className="carousel-image-wrapper">
-                            <img src={Background} alt='a white perfume in a white background' fetchPriority='high' style={{aspectRatio: 16/9, height:"500px", width:"100%"}} className='width'/>
-                        </div>
-                    </Carousel.Item>
-                    <Carousel.Item>
-                        <div className="carousel-image-wrapper">
-                            <img src={Background1} alt='a red perfume in a red background' loading='lazy' fetchPriority='auto' style={{aspectRatio: 16/9, height:"500px", width:"100%"}}  className='width'/>
-                        </div>
-                    </Carousel.Item>
-                    <Carousel.Item>
-                        <div className="carousel-image-wrapper">
-                            <img src={Background2} alt='a woman with the eiffel tower background' loading='lazy' fetchPriority='low' style={{aspectRatio: 16/9, height:"500px", width:"100%"}} className='width'/>
-                        </div>
-                    </Carousel.Item>
-                    <Carousel.Item>
-                        <div className="carousel-image-wrapper">
-                            <img src={Background3} alt='a perfume bottle with a nightclub background' loading='lazy' fetchPriority='low' style={{aspectRatio: 16/9, height:"500px", width:"100%"}} className='width'/>
-                        </div>
-                    </Carousel.Item>
-                    <Carousel.Item>
-                        <div className="carousel-image-wrapper">
-                            <img src={Background5} alt='a black perfume in a black background' loading='lazy' fetchPriority='low' style={{aspectRatio: 16/9, height:"500px", width:"100%"}} className="width" />
-                        </div>
-                    </Carousel.Item>
-                </Carousel>
+    const [current, setCurrent] = useState(0);
+    const [loadedImages, setLoadedImages] = useState({ 0: Background });
+    const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+    const autoPlayRef = useRef(null);
+
+    const goTo = useCallback(async (index) => {
+        // Load the image if not already loaded
+        if (!loadedImages[index]) {
+            const module = await slides[index].src();
+            setLoadedImages(prev => ({ ...prev, [index]: module.default }));
+        }
+        setCurrent(index);
+    }, [loadedImages]);
+
+    const prev = useCallback(() => {
+        goTo((current - 1 + slides.length) % slides.length);
+    }, [current, goTo]);
+
+    const next = useCallback(() => {
+        goTo((current + 1) % slides.length);
+    }, [current, goTo]);
+
+    // Autoplay functionality
+    useEffect(() => {
+        if (isAutoPlaying) {
+            autoPlayRef.current = setInterval(() => {
+                next();
+            }, 5000); // Change slide every 5 seconds
+        }
+
+        return () => {
+            if (autoPlayRef.current) {
+                clearInterval(autoPlayRef.current);
+            }
+        };
+    }, [isAutoPlaying, next]);
+
+    // Pause autoplay on hover
+    const pauseAutoPlay = () => setIsAutoPlaying(false);
+    const resumeAutoPlay = () => setIsAutoPlaying(true);
+
+    return (
+        <div 
+            className="hero-carousel" 
+            aria-label="Featured products carousel"
+            onMouseEnter={pauseAutoPlay}
+            onMouseLeave={resumeAutoPlay}
+        >
+            
+            <div className="hero-carousel__track">
+                {slides.map((slide, index) => (
+                    <div
+                        key={index}
+                        className={`hero-carousel__slide ${index === current ? 'active' : ''}`}
+                        aria-hidden={index !== current}
+                    >
+                        {loadedImages[index] && (
+                            <img
+                                src={loadedImages[index]}
+                                alt={slide.alt}
+                                fetchPriority={index === 0 ? 'high' : 'low'}
+                                decoding={index === 0 ? 'sync' : 'async'}
+                                width="1920"
+                                height="500"
+                                className="hero-carousel__image"
+                            />
+                        )}
+                    </div>
+                ))}
             </div>
+
+            {/* Controls container for better positioning */}
+            <div className="hero-carousel__controls">
+                <button className="hero-carousel__btn hero-carousel__btn--prev" onClick={prev} aria-label="Previous slide">&#8249;</button>
+                <button className="hero-carousel__btn hero-carousel__btn--next" onClick={next} aria-label="Next slide">&#8250;</button>
+
+                <div className="hero-carousel__dots">
+                    {slides.map((_, index) => (
+                        <button
+                            key={index}
+                            className={`hero-carousel__dot ${index === current ? 'active' : ''}`}
+                            onClick={() => goTo(index)}
+                            aria-label={`Go to slide ${index + 1}`}
+                        />
+                    ))}
+                </div>
+            </div>
+
             <div className="content">
                 <h2>Discover the Essence of Elegance</h2>
-                <p className='white'>Experience the exclusivity of boogi-noire's handcrafted fragrances <br />with gold-standard luxury.
-                    Designed for those who leave <br/> an impression.
+                <p className="white">
+                    Experience the exclusivity of boogi-rye's handcrafted fragrances
+                    with gold-standard luxury. Designed for those who leave an impression.
                 </p>
             </div>
-        </div> 
-    )
-}
+        </div>
+    );
+};
 
 export default HeroSection;
