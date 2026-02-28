@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
-import { auth } from '../../firebase';
+import { useAuth } from '../../context/AuthContext';
 import { 
   showSuccessAlert, 
   showErrorAlert
@@ -20,6 +19,7 @@ const ResetPasswordForm = () => {
   const { oobCode } = useParams(); 
   const navigate = useNavigate();
   const location = useLocation();
+  const { verifyResetCode, confirmReset } = useAuth();
 
   // Check if coming from forgot password page
   useEffect(() => {
@@ -29,9 +29,9 @@ const ResetPasswordForm = () => {
   }, [location]);
 
   useEffect(() => {
-    const verifyResetCode = async () => {
+    const verifyCode = async () => {
       try {
-        const verifiedEmail = await verifyPasswordResetCode(auth, oobCode);
+        const verifiedEmail = await verifyResetCode(oobCode);
         setEmail(verifiedEmail);
         showSuccessAlert(
           'Valid Link', 
@@ -47,8 +47,8 @@ const ResetPasswordForm = () => {
       }
     };
 
-    if (oobCode) verifyResetCode();
-  }, [oobCode]);
+    if (oobCode) verifyCode();
+  }, [oobCode, verifyResetCode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,7 +77,7 @@ const ResetPasswordForm = () => {
     setShowResetLoader(true);
 
     try {
-      await confirmPasswordReset(auth, oobCode, newPassword);
+      await confirmReset(oobCode, newPassword);
       
       setShowResetLoader(false);
       showSuccessAlert(

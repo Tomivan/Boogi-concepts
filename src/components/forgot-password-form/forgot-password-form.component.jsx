@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sendPasswordResetEmail, fetchSignInMethodsForEmail } from 'firebase/auth';
-import { auth } from '../../firebase';
+import { useAuth } from '../../context/AuthContext';
 import { showErrorAlert, showSuccessAlert } from '../../utils/alert';
 import './forgot-password-form.component.css';
 
@@ -12,6 +11,7 @@ const ForgotPasswordForm = () => {
     const [loading, setLoading] = useState(false);
     const [showSendingLoader, setShowSendingLoader] = useState(false);
     const navigate = useNavigate();
+    const { resetPassword, fetchSignInMethods } = useAuth();
 
     const handleResetPassword = async (e) => {
         e.preventDefault();
@@ -20,8 +20,7 @@ const ForgotPasswordForm = () => {
         setShowSendingLoader(true);
 
         try {
-            // First check if email exists
-            const methods = await fetchSignInMethodsForEmail(auth, email);
+            const methods = await fetchSignInMethods(email);
             
             if (methods.length === 0) {
               setShowSendingLoader(false);
@@ -31,7 +30,7 @@ const ForgotPasswordForm = () => {
             }
       
             // If email exists, send reset email and redirect
-            await sendPasswordResetEmail(auth, email);
+            await resetPassword(email);
             setShowSendingLoader(false);
             showSuccessAlert('Email Sent', 'Check your inbox for reset instructions');
             setSuccess(true);

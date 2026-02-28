@@ -2,14 +2,14 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFemale, faHome, faMale, faShoppingBag, faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth, db } from '../../firebase';
+import { useAuth } from '../../context/AuthContext';
+import {  db } from '../../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useCartStore } from '../../store/cartStore'; 
 import './navbar.component.css';
 
 const NavbarComponent = () => {
-  const [user, setUser] = useState(null);
+  const { currentUser: user, logout } = useAuth();
   const [orderCount, setOrderCount] = useState(0);
   const [orderLoading, setOrderLoading] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -33,24 +33,27 @@ const NavbarComponent = () => {
   }, [cartItems]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        setOrderLoading(true);
-        try {
-          const ordersRef = collection(db, 'orders');
-          const q = query(ordersRef, where('userId', '==', currentUser.uid));
-          const querySnapshot = await getDocs(q);
-          setOrderCount(querySnapshot.size);
-        } catch (error) {
-          console.error('Error fetching orders:', error);
-        } finally {
-          setOrderLoading(false);
-        }
+    if (!user) {
+      setOrderCount(0);
+      return;
+    }
+
+    const fetchOrders = async () => {
+      setOrderLoading(true);
+      try {
+        const ordersRef = collection(db, 'orders');
+        const q = query(ordersRef, where('userId', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+        setOrderCount(querySnapshot.size);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setOrderLoading(false);
       }
-    });
-    return () => unsubscribe();
-  }, []);
+    };
+
+    fetchOrders();
+  }, [user]); 
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -96,7 +99,7 @@ const NavbarComponent = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await logout();
       navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);

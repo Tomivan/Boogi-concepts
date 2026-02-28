@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../firebase';
+import { useAuth } from '../../context/AuthContext';
 import { showErrorAlert, showSuccessAlert } from '../../utils/alert';
 import './login-form.component.css';
 
@@ -12,6 +11,7 @@ const LoginForm = () => {
     const [loading, setLoading] = useState(false);
     const [showLoginLoader, setShowLoginLoader] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth(); 
 
     const handleLogin = async(e) => {
         e.preventDefault();
@@ -20,7 +20,7 @@ const LoginForm = () => {
         setShowLoginLoader(true);
 
         try {
-            await signInWithEmailAndPassword(auth, email, password)
+            await login(email, password);
             setShowLoginLoader(false);
             showSuccessAlert('Welcome back!', 'You have successfully logged in');
             navigate("/")

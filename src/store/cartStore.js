@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { db } from '../firebase';
 
 const parsePrice = (price) => {
   if (typeof price === 'number') return price;
@@ -180,49 +179,56 @@ export const useCartStore = create(
 
       // Initialize cart with cache optimization
       initializeCart: () => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-          try {
-            if (user) {
-              set({ userId: user.uid, loading: true });
-              
-              // Try to use cache first for instant UI update
-              const cachedItems = get().getCachedCart();
-              if (cachedItems) {
-                set({ cartItems: cachedItems });
+        let unsubscribe;
+
+        const setup = async () => {
+          // Lazy load auth only when initializeCart is called
+          const { getAuth } = await import('firebase/auth');
+          const { onAuthStateChanged } = await import('firebase/auth');
+          const { default: app } = await import('../firebase');
+          const auth = getAuth(app);
+
+          unsubscribe = onAuthStateChanged(auth, async (user) => {
+            try {
+              if (user) {
+                set({ userId: user.uid, loading: true });
+                
+                const cachedItems = get().getCachedCart();
+                if (cachedItems) {
+                  set({ cartItems: cachedItems });
+                }
+                
+                const serverCart = await get().getCart(user.uid);
+                const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
+                
+                if (localCart.length > 0) {
+                  const mergedCart = await get().mergeCarts(user.uid, localCart);
+                  set({ cartItems: mergedCart });
+                  localStorage.removeItem('cart');
+                } else if (!cachedItems || cachedItems.length !== serverCart.length) {
+                  set({ cartItems: serverCart });
+                }
+              } else {
+                set({ userId: null });
+                const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
+                const parsedCart = localCart.map(item => ({
+                  ...item,
+                  quantity: Number(item.quantity) || 1
+                }));
+                set({ cartItems: parsedCart });
+                get().cacheCartState();
               }
-              
-              // Then fetch fresh data in background
-              const serverCart = await get().getCart(user.uid);
-              const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
-              
-              if (localCart.length > 0) {
-                const mergedCart = await get().mergeCarts(user.uid, localCart);
-                set({ cartItems: mergedCart });
-                localStorage.removeItem('cart');
-              } else if (!cachedItems || cachedItems.length !== serverCart.length) {
-                // Only update if different from cache
-                set({ cartItems: serverCart });
-              }
-            } else {
-              set({ userId: null });
-              const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
-              // Ensure quantities are numbers
-              const parsedCart = localCart.map(item => ({
-                ...item,
-                quantity: Number(item.quantity) || 1
-              }));
-              set({ cartItems: parsedCart });
-              // Cache the local cart
-              get().cacheCartState();
+            } catch (error) {
+              console.error('Auth state error:', error);
+            } finally {
+              set({ loading: false });
             }
-          } catch (error) {
-            console.error('Auth state error:', error);
-          } finally {
-            set({ loading: false });
-          }
-        });
-        
-        return unsubscribe;
+          });
+        };
+
+        setup();
+
+        return () => unsubscribe?.();
       },
 
       // Enhanced cart operations with cache updates

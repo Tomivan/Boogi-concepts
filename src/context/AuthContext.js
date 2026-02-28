@@ -1,14 +1,4 @@
 import { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { 
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-  updateEmail,
-  updatePassword
-} from 'firebase/auth';
-import { auth } from '../firebase';
 
 const AuthContext = createContext();
 
@@ -16,87 +6,97 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [authModule, setAuthModule] = useState(null); 
 
-  // Configure your admin emails (can be array for multiple admins)
   const ADMIN_EMAILS = useMemo(() => ['okwuchidavida@gmail.com'], []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setIsAdmin(user ? ADMIN_EMAILS.includes(user.email) : false);
-      setLoading(false);
-    });
-    return unsubscribe;
+    let unsubscribe;
+
+    const initAuth = async () => {
+      // Dynamically import only when component mounts
+      const { auth } = await import('../firebase');
+      const { onAuthStateChanged } = await import('firebase/auth');
+
+      setAuthModule({ auth }); 
+
+      unsubscribe = onAuthStateChanged(auth, (user) => {
+        setCurrentUser(user);
+        setIsAdmin(user ? ADMIN_EMAILS.includes(user.email) : false);
+        setLoading(false);
+      });
+    };
+
+    initAuth();
+    return () => unsubscribe?.();
   }, [ADMIN_EMAILS]);
 
-  // Login function
   const login = async (email, password) => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return userCredential;
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
+    const { auth } = authModule || await import('../firebase');
+    const { signInWithEmailAndPassword } = await import('firebase/auth');
+    return signInWithEmailAndPassword(auth, email, password);
   };
 
-  // Signup function
   const signup = async (email, password) => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      return userCredential;
-    } catch (error) {
-      console.error('Signup error:', error);
-      throw error;
-    }
+    const { auth } = authModule || await import('../firebase');
+    const { createUserWithEmailAndPassword } = await import('firebase/auth');
+    return createUserWithEmailAndPassword(auth, email, password);
   };
 
-  // Logout function
   const logout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error('Logout error:', error);
-      throw error;
-    }
+    const { auth } = authModule || await import('../firebase');
+    const { signOut } = await import('firebase/auth');
+    return signOut(auth);
   };
 
-  // Password reset function
   const resetPassword = async (email) => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-    } catch (error) {
-      console.error('Password reset error:', error);
-      throw error;
-    }
+    const { auth } = authModule || await import('../firebase');
+    const { sendPasswordResetEmail } = await import('firebase/auth');
+    return sendPasswordResetEmail(auth, email);
   };
 
-  // Update email function
   const updateUserEmail = async (email) => {
-    try {
-      await updateEmail(currentUser, email);
-    } catch (error) {
-      console.error('Email update error:', error);
-      throw error;
-    }
+    const { updateEmail } = await import('firebase/auth');
+    return updateEmail(currentUser, email);
   };
 
-  // Update password function
   const updateUserPassword = async (password) => {
-    try {
-      await updatePassword(currentUser, password);
-    } catch (error) {
-      console.error('Password update error:', error);
-      throw error;
-    }
+    const { updatePassword } = await import('firebase/auth');
+    return updatePassword(currentUser, password);
   };
 
-  // Check admin status (can be used to verify admin status at any time)
-  const checkAdminStatus = (email) => {
-    return ADMIN_EMAILS.includes(email);
-  };
+  const fetchSignInMethods = async (email) => {
+  const { fetchSignInMethodsForEmail } = await import('firebase/auth');
+  const { getAuth } = await import('firebase/auth');
+  const { default: app } = await import('../firebase');
+  const auth = getAuth(app);
+  return fetchSignInMethodsForEmail(auth, email);
+};
+const verifyResetCode = async (oobCode) => {
+  const { verifyPasswordResetCode } = await import('firebase/auth');
+  const { getAuth } = await import('firebase/auth');
+  const { default: app } = await import('../firebase');
+  const auth = getAuth(app);
+  return verifyPasswordResetCode(auth, oobCode);
+};
 
-  const value = { 
+const confirmReset = async (oobCode, newPassword) => {
+  const { confirmPasswordReset } = await import('firebase/auth');
+  const { getAuth } = await import('firebase/auth');
+  const { default: app } = await import('../firebase');
+  const auth = getAuth(app);
+  return confirmPasswordReset(auth, oobCode, newPassword);
+};
+
+const updateUserProfile = async (displayName) => {
+  const { updateProfile } = await import('firebase/auth');
+  return updateProfile(currentUser, { displayName });
+};
+
+
+  const checkAdminStatus = (email) => ADMIN_EMAILS.includes(email);
+
+  const value = {
     currentUser,
     isAdmin,
     login,
@@ -105,7 +105,11 @@ export function AuthProvider({ children }) {
     resetPassword,
     updateUserEmail,
     updateUserPassword,
-    checkAdminStatus
+    checkAdminStatus,
+    fetchSignInMethods,
+    verifyResetCode,
+    confirmReset,
+    updateUserProfile
   };
 
   return (

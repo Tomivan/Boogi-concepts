@@ -1,22 +1,9 @@
-import { useEffect, useState } from 'react';
-import { auth } from './firebase';
 import { AuthProvider } from './context/AuthContext';
-import { onAuthStateChanged } from 'firebase/auth';
 import { CartProvider } from './components/CartProvider';
 import Pages from './pages';
 import './App.css';
 
 function App() {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, () => {
-      setLoading(false);
-    });
-    return unsubscribe; // Cleanup subscription
-  }, []);
-
-  if (loading) return <div className="loading-screen">Loading...</div>;
 
   return (
     <div className="App">

@@ -48,7 +48,6 @@ const ProductDetails = () => {
       setLoadingReviews(false);
       setProductLoading(false);
     }, (error) => {
-      console.error('Error fetching reviews:', error);
       setLoadingReviews(false);
       setProductLoading(false);
     });
@@ -89,7 +88,6 @@ const ProductDetails = () => {
       }
       
     } catch (error) {
-      console.error('Error adding to cart:', error);
       
       setShowAddToCartLoader(false);
       
@@ -220,7 +218,6 @@ const ProductDetails = () => {
       showSuccessAlert('Review Submitted!', 'Thank you for your feedback! Your review has been submitted successfully.');
       
     } catch (error) {
-      console.error('Error adding review:', error);
       setShowSubmitReviewLoader(false);
       showErrorAlert('Submission Failed', 'There was an error submitting your review. Please try again.');
     } finally {

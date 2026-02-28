@@ -115,7 +115,6 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
           setIsUploading(false);
           setShowImageUploadLoader(false);
           showErrorAlert('Upload Error', 'Failed to get image URL. Please try again.');
-          console.error('Download URL error:', error);
         }
       }
     );
@@ -179,7 +178,6 @@ const EditPerfumeForm = ({ product, onSave, onCancel }) => {
           ? 'Failed to update perfume. Please try again.' 
           : 'Failed to add perfume. Please try again.'
       );
-      console.error('Save error:', error);
     } finally {
       setIsSaving(false);
     }

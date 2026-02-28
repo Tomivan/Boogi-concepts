@@ -1,4 +1,3 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { 
@@ -6,7 +5,6 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager
 } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -26,13 +24,8 @@ const analytics = getAnalytics(app);
 const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager(),
-    // For unlimited cache size (default is 40MB)
-    cacheSizeBytes: 1 * 1024 * 1024 * 1024 // 1GB cache size
+    cacheSizeBytes: 1 * 1024 * 1024 * 1024 
   })
 });
 
-const auth = getAuth(app);
-
-// No need for separate enablePersistence function - it's built into initializeFirestore
-
-export { db, auth, analytics, app };
+export { db, analytics, app };

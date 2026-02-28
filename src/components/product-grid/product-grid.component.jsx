@@ -149,7 +149,6 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
         setError(null);
         
       } catch (err) {
-        console.error('Error fetching products:', err);
         showErrorAlert(
           'Load Failed', 
           'Failed to load products. Please check your connection and try again.'

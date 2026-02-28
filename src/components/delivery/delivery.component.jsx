@@ -31,7 +31,6 @@ const Delivery = () => {
       try {
         return JSON.parse(savedData);
       } catch (error) {
-        console.error('Error parsing saved form data:', error);
         return null;
       }
     }
@@ -42,7 +41,7 @@ const Delivery = () => {
     try {
       localStorage.setItem('deliveryFormData', JSON.stringify(data));
     } catch (error) {
-      console.error('Error saving form data:', error);
+      throw error;
     }
   };
 
@@ -143,6 +142,7 @@ const Delivery = () => {
         'Shipping Error', 
         'Failed to load shipping fees. Using default rates.'
       );
+      throw error;
     });
 
     return () => unsubscribe();
@@ -257,7 +257,6 @@ const Delivery = () => {
       );
     },
     onError: (error) => {
-      console.error('Paystack Error:', error);
       showErrorAlert(
         'Payment Failed',
         error.message || 'An unknown error occurred. Please try again.'

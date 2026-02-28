@@ -14,7 +14,6 @@ const Completed = () => {
       error 
     } = state || {};
   
-    // Transform items if they come from different sources
     const normalizedItems = cartItems.map(item => ({
       name: item.name || item.productName || 'Unknown Item',
       price: item.price || item.productPrice || 0,
@@ -25,7 +24,6 @@ const Completed = () => {
     const goToHomepage = () => navigate("/");
   
     if (error) {
-      console.log(error)
       return (
         <div className='completed'>
           <div className="confirmation error">

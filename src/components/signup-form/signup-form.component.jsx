@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from "../../firebase";
+import { useAuth } from '../../context/AuthContext';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { showErrorAlert, showSuccessAlert } from '../../utils/alert';
@@ -15,6 +14,7 @@ const SignupForm = () => {
     const [loading, setLoading] = useState(false);
     const [showCreatingLoader, setShowCreatingLoader] = useState(false);
     const navigate = useNavigate();
+    const { signup, updateUserProfile } = useAuth();
 
     const validatePassword = (password) => {
         if (password.length < 8) {
@@ -46,17 +46,14 @@ const SignupForm = () => {
         setShowCreatingLoader(true);
 
         try {
-            const userCredential = await createUserWithEmailAndPassword(
-                auth,
+            const userCredential = await signup(
                 email,
                 password
             );
             const user = userCredential.user;
 
             // Update user profile with display name
-            await updateProfile(user, {
-                displayName: fullName
-            });
+            await updateUserProfile(fullName);
 
             // Save additional user data to Firestore
             await addDoc(collection(db, "users"), {
