@@ -1,138 +1,158 @@
-import { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 const AuthContext = createContext();
 
+// Admin emails outside component — no useMemo needed, never changes
+const ADMIN_EMAILS = ['okwuchidavida@gmail.com'];
+
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+    const [currentUser, setCurrentUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [authReady, setAuthReady] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
 
-  const ADMIN_EMAILS = useMemo(() => ['okwuchidavida@gmail.com'], []);
+    useEffect(() => {
+        let unsubscribe;
+        let timer;
 
-  useEffect(() => {
-    let unsubscribe;
+        const initAuth = async () => {
+            try {
+                const [authModule, { auth }] = await Promise.all([
+                    import('firebase/auth'),
+                    import('../firebase'),
+                ]);
 
-    const initAuth = async () => {
-      try {
-        // Import Firebase modules
-        const authModule = await import('firebase/auth');
+                unsubscribe = authModule.onAuthStateChanged(auth, (user) => {
+                    setCurrentUser(user ?? null);
+                    setIsAdmin(user ? ADMIN_EMAILS.includes(user.email) : false);
+                    setLoading(false);
+                    setAuthReady(true);
+                });
+            } catch (error) {
+                console.error('Error initializing auth:', error);
+                setLoading(false);
+                setAuthReady(true); // unblock UI even on failure
+            }
+        };
+
+        // Defer auth init by 2s so it doesn't block first paint
+        timer = setTimeout(initAuth, 2000);
+
+        return () => {
+            clearTimeout(timer);
+            if (unsubscribe) unsubscribe();
+        };
+    }, []); // no dependency on ADMIN_EMAILS since it's now module-level
+
+    // Shared helper — memoized so it doesn't cause re-renders in consumers
+    const getAuth = useCallback(async () => {
         const { auth } = await import('../firebase');
-        
-        // Set up auth state listener
-        unsubscribe = authModule.onAuthStateChanged(auth, (user) => {
-          setCurrentUser(user);
-          setIsAdmin(user ? ADMIN_EMAILS.includes(user.email) : false);
-          setLoading(false);
-        });
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-        setLoading(false);
-      }
+        return auth;
+    }, []);
+
+    const login = useCallback(async (email, password) => {
+        const [{ signInWithEmailAndPassword }, auth] = await Promise.all([
+            import('firebase/auth'),
+            getAuth(),
+        ]);
+        return signInWithEmailAndPassword(auth, email, password);
+    }, [getAuth]);
+
+    const signup = useCallback(async (email, password) => {
+        const [{ createUserWithEmailAndPassword }, auth] = await Promise.all([
+            import('firebase/auth'),
+            getAuth(),
+        ]);
+        return createUserWithEmailAndPassword(auth, email, password);
+    }, [getAuth]);
+
+    const logout = useCallback(async () => {
+        const [{ signOut }, auth] = await Promise.all([
+            import('firebase/auth'),
+            getAuth(),
+        ]);
+        return signOut(auth);
+    }, [getAuth]);
+
+    const resetPassword = useCallback(async (email) => {
+        const [{ sendPasswordResetEmail }, auth] = await Promise.all([
+            import('firebase/auth'),
+            getAuth(),
+        ]);
+        return sendPasswordResetEmail(auth, email);
+    }, [getAuth]);
+
+    const updateUserEmail = useCallback(async (email) => {
+        const { updateEmail } = await import('firebase/auth');
+        return updateEmail(currentUser, email);
+    }, [currentUser]);
+
+    const updateUserPassword = useCallback(async (password) => {
+        const { updatePassword } = await import('firebase/auth');
+        return updatePassword(currentUser, password);
+    }, [currentUser]);
+
+    const updateUserProfile = useCallback(async (displayName) => {
+        const { updateProfile } = await import('firebase/auth');
+        return updateProfile(currentUser, { displayName });
+    }, [currentUser]);
+
+    // These three all need a fresh auth instance from getAuth
+    const fetchSignInMethods = useCallback(async (email) => {
+        const [{ fetchSignInMethodsForEmail }, auth] = await Promise.all([
+            import('firebase/auth'),
+            getAuth(),
+        ]);
+        return fetchSignInMethodsForEmail(auth, email);
+    }, [getAuth]);
+
+    const verifyResetCode = useCallback(async (oobCode) => {
+        const [{ verifyPasswordResetCode }, auth] = await Promise.all([
+            import('firebase/auth'),
+            getAuth(),
+        ]);
+        return verifyPasswordResetCode(auth, oobCode);
+    }, [getAuth]);
+
+    const confirmReset = useCallback(async (oobCode, newPassword) => {
+        const [{ confirmPasswordReset }, auth] = await Promise.all([
+            import('firebase/auth'),
+            getAuth(),
+        ]);
+        return confirmPasswordReset(auth, oobCode, newPassword);
+    }, [getAuth]);
+
+    const checkAdminStatus = useCallback(
+        (email) => ADMIN_EMAILS.includes(email),
+        []
+    );
+
+    // Stable value object — only updates when auth state actually changes
+    const value = {
+        currentUser,
+        isAdmin,
+        authReady,
+        loading,
+        login,
+        signup,
+        logout,
+        resetPassword,
+        updateUserEmail,
+        updateUserPassword,
+        updateUserProfile,
+        checkAdminStatus,
+        fetchSignInMethods,
+        verifyResetCode,
+        confirmReset,
     };
 
-    initAuth();
-    
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, [ADMIN_EMAILS]);
-
-  // Helper function to get auth instance
-  const getAuth = async () => {
-    const { auth } = await import('../firebase');
-    return auth;
-  };
-
-  const login = async (email, password) => {
-    const authModule = await import('firebase/auth');
-    const auth = await getAuth();
-    return authModule.signInWithEmailAndPassword(auth, email, password);
-  };
-
-  const signup = async (email, password) => {
-    const authModule = await import('firebase/auth');
-    const auth = await getAuth();
-    return authModule.createUserWithEmailAndPassword(auth, email, password);
-  };
-
-  const logout = async () => {
-    const authModule = await import('firebase/auth');
-    const auth = await getAuth();
-    return authModule.signOut(auth);
-  };
-
-  const resetPassword = async (email) => {
-    const authModule = await import('firebase/auth');
-    const auth = await getAuth();
-    return authModule.sendPasswordResetEmail(auth, email);
-  };
-
-  const updateUserEmail = async (email) => {
-    const authModule = await import('firebase/auth');
-    return authModule.updateEmail(currentUser, email);
-  };
-
-  const updateUserPassword = async (password) => {
-    const authModule = await import('firebase/auth');
-    return authModule.updatePassword(currentUser, password);
-  };
-
-  const fetchSignInMethods = async (email) => {
-    const authModule = await import('firebase/auth');
-    const { getAuth } = authModule;
-    const { default: app } = await import('../firebase');
-    const auth = getAuth(app);
-    return authModule.fetchSignInMethodsForEmail(auth, email);
-  };
-
-  const verifyResetCode = async (oobCode) => {
-    const authModule = await import('firebase/auth');
-    const { getAuth } = authModule;
-    const { default: app } = await import('../firebase');
-    const auth = getAuth(app);
-    return authModule.verifyPasswordResetCode(auth, oobCode);
-  };
-
-  const confirmReset = async (oobCode, newPassword) => {
-    const authModule = await import('firebase/auth');
-    const { getAuth } = authModule;
-    const { default: app } = await import('../firebase');
-    const auth = getAuth(app);
-    return authModule.confirmPasswordReset(auth, oobCode, newPassword);
-  };
-
-  const updateUserProfile = async (displayName) => {
-    const authModule = await import('firebase/auth');
-    return authModule.updateProfile(currentUser, { displayName });
-  };
-
-  const checkAdminStatus = (email) => ADMIN_EMAILS.includes(email);
-
-  const value = {
-    currentUser,
-    isAdmin,
-    login,
-    signup,
-    logout,
-    resetPassword,
-    updateUserEmail,
-    updateUserPassword,
-    checkAdminStatus,
-    fetchSignInMethods,
-    verifyResetCode,
-    confirmReset,
-    updateUserProfile
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+        </AuthContext.Provider>
+    );
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+    return useContext(AuthContext);
 }
