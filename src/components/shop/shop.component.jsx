@@ -91,11 +91,10 @@ const Shop = () => {
     const [perPage, setPerPage] = useState(getProductsPerPage);
     const [loading, setLoading] = useState(true);
     const [adminMode, setAdminMode] = useState(false);
-    const [addingTo, setAddingTo] = useState('');       // section name or ''
-    const [removingId, setRemovingId] = useState('');   // product id or ''
+    const [addingTo, setAddingTo] = useState('');
+    const [removingId, setRemovingId] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
 
-    // ── Responsive perPage ──────────────────────────────────────────────────
 
     useEffect(() => {
         const mq = window.matchMedia('(max-width: 767px)');
