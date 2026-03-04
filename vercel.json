@@ -32,7 +32,13 @@
     {
       "source": "/(.*)",
       "destination": "https://www.boogi-noire.org/$1",
-      "statusCode": 301
+      "statusCode": 301,
+      "has": [
+        {
+          "type": "host",
+          "value": "boogi-noire.org"
+        }
+      ]
     }
   ]
 }
