@@ -40,7 +40,8 @@
     "postbuild": "purgecss --css build/static/css/*.css --content build/**/*.html build/**/*.js --output build/static/css",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "analyze": "cross-env ANALYZE=true react-app-rewired build"
+    "analyze": "cross-env ANALYZE=true react-app-rewired build",
+    "generate-images": "node scripts/generate-images.js"
   },
   "eslintConfig": {
     "extends": [
@@ -71,6 +72,7 @@
     "customize-cra": "^1.0.0",
     "purgecss": "^8.0.0",
     "react-app-rewired": "^2.2.1",
+    "sharp": "^0.34.5",
     "webpack-bundle-analyzer": "^5.2.0"
   }
 }
