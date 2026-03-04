@@ -185,7 +185,7 @@ export const useCartStore = create(
           // Lazy load auth only when initializeCart is called
           const { getAuth } = await import('firebase/auth');
           const { onAuthStateChanged } = await import('firebase/auth');
-          const { default: app } = await import('../firebase');
+          const { app } = await import('../firebase');
           const auth = getAuth(app);
 
           unsubscribe = onAuthStateChanged(auth, async (user) => {

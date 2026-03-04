@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 
 const AuthContext = createContext();
 
-// Admin emails outside component — no useMemo needed, never changes
 const ADMIN_EMAILS = ['okwuchidavida@gmail.com'];
 
 export function AuthProvider({ children }) {
@@ -31,7 +30,7 @@ export function AuthProvider({ children }) {
             } catch (error) {
                 console.error('Error initializing auth:', error);
                 setLoading(false);
-                setAuthReady(true); // unblock UI even on failure
+                setAuthReady(true); 
             }
         };
 

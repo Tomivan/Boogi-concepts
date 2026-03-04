@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+
 import { 
   initializeFirestore,
   persistentLocalCache,
@@ -16,11 +16,9 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 
-// Initialize Firestore with persistent cache
+const app = initializeApp(firebaseConfig);
+
 const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager(),
@@ -28,4 +26,27 @@ const db = initializeFirestore(app, {
   })
 });
 
-export { db, analytics, app };
+export const getAnalytics = async () => {
+  const { getAnalytics } = await import('firebase/analytics');
+  return getAnalytics(app);
+};
+
+export const getAuth = async () => {
+  const { getAuth } = await import('firebase/auth');
+  return getAuth(app);
+};
+
+
+if (typeof window !== 'undefined') {
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      getAnalytics().catch(console.error);
+    }, { timeout: 5000 });
+  } else {
+    setTimeout(() => {
+      getAnalytics().catch(console.error);
+    }, 3000);
+  }
+}
+
+export { db, app };

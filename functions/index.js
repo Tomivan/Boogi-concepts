@@ -17,8 +17,8 @@ const configureMailTransport = () => {
     },
     pool: true,
     maxConnections: 1,
-    rateDelta: 20000, // 20 seconds delay between messages
-    rateLimit: 5 // Max 5 messages per rateDelta
+    rateDelta: 20000, 
+    rateLimit: 5 
   });
 };
 
