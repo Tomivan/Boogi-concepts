@@ -39,38 +39,68 @@ const getProductsPerPage = () => {
     return 4;
 };
 
-
-const Spinner = ({ light = false }) => (
-    <div className={`loader-spinner ${light ? 'light' : ''}`} />
+const Spinner = ({ light = false, size = 'medium' }) => (
+    <div className={`loader-spinner ${light ? 'light' : ''} size-${size}`} />
 );
 
-const CarouselSkeleton = () => (
-    <div className="perfume-carousel-container">
-        <button className="carousel-arrow left-arrow" disabled aria-hidden="true">&#8249;</button>
-        <div className="perfumes skeleton-carousel">
-            {[1, 2, 3, 4].map(i => (
-                <div key={i} className="perfume skeleton-perfume">
-                    <div className="skeleton-image" />
-                    <div className="skeleton-content">
-                        <div className="skeleton-title" />
-                        <div className="skeleton-price" />
-                    </div>
-                </div>
+const ProductSkeleton = ({ priority = false }) => (
+    <div className={`perfume skeleton-perfume ${priority ? 'priority-skeleton' : ''}`}>
+        <div className="skeleton-image" />
+        <div className="skeleton-content">
+            <div className="skeleton-title" />
+            <div className="skeleton-price" />
+        </div>
+    </div>
+);
+
+const PriorityCarouselSkeleton = () => (
+    <div className="perfume-carousel-container priority-carousel">
+        <button className="carousel-arrow left-arrow" disabled aria-hidden="true">‹</button>
+        <div className="perfumes">
+            {[1].map(i => (
+                <ProductSkeleton key={i} priority={true} />
             ))}
         </div>
-        <button className="carousel-arrow right-arrow" disabled aria-hidden="true">&#8250;</button>
+        <button className="carousel-arrow right-arrow" disabled aria-hidden="true">›</button>
+    </div>
+);
+
+const RegularCarouselSkeleton = () => (
+    <div className="perfume-carousel-container">
+        <button className="carousel-arrow left-arrow" disabled aria-hidden="true">‹</button>
+        <div className="perfumes">
+            {[1, 2, 3, 4].map(i => (
+                <ProductSkeleton key={i} priority={false} />
+            ))}
+        </div>
+        <button className="carousel-arrow right-arrow" disabled aria-hidden="true">›</button>
     </div>
 );
 
 const ActionLoaderOverlay = () => (
     <div className="action-loader-overlay" role="status" aria-live="polite">
         <div className="action-loader-container">
-            <Spinner />
+            <Spinner size="large" />
             <p>Processing...</p>
         </div>
     </div>
 );
 
+
+const ProductImage = ({ product, onClick, priority = false }) => (
+    <img
+        src={product.ImageUrl || product.image}
+        alt={product.Name || product.name}
+        width="150"
+        height="150"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : 'auto'}
+        decoding={priority ? 'sync' : 'async'}
+        className={`product-image ${priority ? 'priority-image' : ''}`}
+        style={{ aspectRatio: '1/1', objectFit: 'cover', cursor: 'pointer' }}
+        onClick={onClick}
+    />
+);
 
 const Shop = () => {
     const { currentUser } = useAuth();
@@ -91,21 +121,23 @@ const Shop = () => {
     const [removingId, setRemovingId] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
 
-
     useEffect(() => {
         const mq = window.matchMedia('(max-width: 767px)');
         const mq2 = window.matchMedia('(max-width: 1023px)');
 
         const update = () => setPerPage(getProductsPerPage());
 
-        mq.addEventListener('change', update);
-        mq2.addEventListener('change', update);
+        // Use passive listeners for better performance
+        mq.addEventListener('change', update, { passive: true });
+        mq2.addEventListener('change', update, { passive: true });
+        
         return () => {
             mq.removeEventListener('change', update);
             mq2.removeEventListener('change', update);
         };
     }, []);
 
+    // Optimized data fetching with priority for popular section
     useEffect(() => {
         const fetchProducts = async () => {
             // Return cached data immediately if valid
@@ -119,30 +151,48 @@ const Shop = () => {
             try {
                 setLoading(true);
 
-                const [allSnap, popularSnap, menSnap, womenSnap] = await Promise.all([
+                // Fetch popular section first (priority for LCP)
+                const popularSnap = await getDocs(
+                    query(collection(db, 'popularPerfumes'), orderBy('rank'))
+                );
+
+                // Resolve popular products first
+                const popularRefs = popularSnap.docs
+                    .map(d => d.data().perfumeRef)
+                    .filter(ref => ref?.path);
+
+                const popularSnaps = await Promise.all(
+                    popularRefs.map(ref => getDoc(ref))
+                );
+
+                const popular = popularSnaps
+                    .filter(s => s.exists())
+                    .map(s => ({ id: s.id, ...s.data() }));
+
+                // Set popular products immediately
+                setProducts(prev => ({ ...prev, popular }));
+
+                // Fetch remaining data in background
+                const [allSnap, menSnap, womenSnap] = await Promise.all([
                     getDocs(query(collection(db, 'products'))),
-                    getDocs(query(collection(db, 'popularPerfumes'), orderBy('rank'))),
                     getDocs(query(collection(db, 'mensPerfume'), orderBy('rank'))),
                     getDocs(query(collection(db, 'products'), where('Gender', '==', 'Female'), limit(12))),
                 ]);
 
                 const allProducts = allSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-                const resolveRefs = async (snapshot) => {
-                    const refs = snapshot.docs
-                        .map(d => d.data().perfumeRef)
-                        .filter(ref => ref?.path);
+                // Resolve men's products
+                const menRefs = menSnap.docs
+                    .map(d => d.data().perfumeRef)
+                    .filter(ref => ref?.path);
 
-                    const snaps = await Promise.all(refs.map(ref => getDoc(ref)));
-                    return snaps
-                        .filter(s => s.exists())
-                        .map(s => ({ id: s.id, ...s.data() }));
-                };
+                const menSnaps = await Promise.all(
+                    menRefs.map(ref => getDoc(ref))
+                );
 
-                const [popular, men] = await Promise.all([
-                    resolveRefs(popularSnap),
-                    resolveRefs(menSnap),
-                ]);
+                const men = menSnaps
+                    .filter(s => s.exists())
+                    .map(s => ({ id: s.id, ...s.data() }));
 
                 const women = womenSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
@@ -182,7 +232,6 @@ const Shop = () => {
     const goToProduct = useCallback((product) => {
         navigate('/product-details', { state: { product } });
     }, [navigate]);
-
 
     const addToSection = useCallback(async (section) => {
         if (!selectedProduct) return;
@@ -287,30 +336,30 @@ const Shop = () => {
                     disabled={!selectedProduct || !!addingTo || actionLoading}
                     className="add-button"
                 >
-                    {addingTo === section ? <><Spinner light /> Adding...</> : `+ Add to ${section}`}
+                    {addingTo === section ? <><Spinner size="small" light /> Adding...</> : `+ Add to ${section}`}
                 </button>
             </div>
         );
     };
 
-    const renderCarousel = (section) => {
+    const renderCarousel = (section, isPriority = false) => {
         const list = products[section];
         const start = indices[section];
         const visible = list.slice(start, start + perPage);
 
         return (
-            <div className="perfume-carousel-container">
+            <div className={`perfume-carousel-container ${isPriority ? 'priority-carousel' : ''}`}>
                 <button
                     className="carousel-arrow left-arrow"
                     onClick={() => prev(section)}
                     disabled={indices[section] === 0 || actionLoading}
                     aria-label="Previous products"
                 >
-                    &#8249;
+                    ‹
                 </button>
 
                 <div className="perfumes">
-                    {visible.map(product => (
+                    {visible.map((product, index) => (
                         <div className="perfume" key={product.id}>
                             {adminMode && (
                                 <button
@@ -319,22 +368,17 @@ const Shop = () => {
                                     disabled={removingId === product.id || actionLoading}
                                     aria-label={`Remove ${product.Name || product.name}`}
                                 >
-                                    {removingId === product.id ? <Spinner light /> : '✕'}
+                                    {removingId === product.id ? <Spinner size="small" light /> : '✕'}
                                 </button>
                             )}
-                            <img
-                                src={product.ImageUrl || product.image}
-                                alt={product.Name || product.name}
-                                width="150"
-                                height="150"
-                                loading="lazy"
-                                decoding="async"
-                                style={{ aspectRatio: '1/1', objectFit: 'cover', cursor: 'pointer' }}
+                            <ProductImage
+                                product={product}
                                 onClick={() => goToProduct(product)}
+                                priority={isPriority && index === 0} // First image in priority section gets highest priority
                             />
                             <p className="perfume-name">{product.Name || product.name}</p>
                             <p className="price">
-                                &#8358; {(product.Price || product.price).toLocaleString()}
+                                ₦ {(product.Price || product.price).toLocaleString()}
                             </p>
                         </div>
                     ))}
@@ -346,24 +390,33 @@ const Shop = () => {
                     disabled={indices[section] >= list.length - perPage || actionLoading}
                     aria-label="Next products"
                 >
-                    &#8250;
+                    ›
                 </button>
             </div>
         );
     };
 
-
+    // Optimized loading state with priority for above-fold content
     if (loading) {
         return (
             <div className="shop">
-                <section className="section"><h2>Most Popular</h2><CarouselSkeleton /></section>
-                <section className="section gender">
-                    <div className="heading"><h2>Men's Perfume</h2><Link to='/men' className='link'>View all</Link></div>
-                    <CarouselSkeleton />
+                <section className="section">
+                    <h2>Most Popular</h2>
+                    <PriorityCarouselSkeleton />
                 </section>
                 <section className="section gender">
-                    <div className="heading"><h2>Women's Perfume</h2><Link to='/women' className='link'>View all</Link></div>
-                    <CarouselSkeleton />
+                    <div className="heading">
+                        <h2>Men's Perfume</h2>
+                        <Link to='/men' className='link'>View all</Link>
+                    </div>
+                    <RegularCarouselSkeleton />
+                </section>
+                <section className="section gender">
+                    <div className="heading">
+                        <h2>Women's Perfume</h2>
+                        <Link to='/women' className='link'>View all</Link>
+                    </div>
+                    <RegularCarouselSkeleton />
                 </section>
             </div>
         );
@@ -393,7 +446,7 @@ const Shop = () => {
             <section className="section">
                 <h2>Most Popular</h2>
                 {renderAdminControls('popular')}
-                {renderCarousel('popular')}
+                {renderCarousel('popular', true)}
             </section>
 
             <section className="section gender">
