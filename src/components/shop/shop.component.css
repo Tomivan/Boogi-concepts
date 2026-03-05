@@ -62,11 +62,6 @@
 .right-arrow {
   margin-left: 15px;
 }
-.perfume-carousel-container .perfume {
-  min-width: calc(22% - 15px); 
-  text-align: center;
-  height: 45vh;
-}
 .perfume-name {
     margin-top: 5%;
     font-size: 1.2em;

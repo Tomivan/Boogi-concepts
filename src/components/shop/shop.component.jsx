@@ -9,7 +9,6 @@ import { db } from '../../firebase';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '../../utils/alert';
 import './shop.component.css';
 
-// ─── Constants ───────────────────────────────────────────────────────────────
 
 const ADMIN_EMAILS = ['okwuchidavida@gmail.com'];
 const CACHE_TTL = 24 * 60 * 60 * 1000;
@@ -20,7 +19,6 @@ const SECTION_COLLECTIONS = {
     women:   'womensPerfume',
 };
 
-// ─── Cache (module-level singleton, survives re-renders) ──────────────────────
 
 let _cache = { data: null, timestamp: null };
 
@@ -34,7 +32,6 @@ const cache = {
     clear: ()      => { _cache = { data: null, timestamp: null }; },
 };
 
-// ─── Responsive helper (runs once, not on every resize) ──────────────────────
 
 const getProductsPerPage = () => {
     if (window.matchMedia('(max-width: 767px)').matches)  return 1;
@@ -79,7 +76,6 @@ const Shop = () => {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
 
-    // Memoize isAdmin so it doesn't change reference every render
     const isAdmin = useMemo(
         () => !!(currentUser && ADMIN_EMAILS.includes(currentUser.email)),
         [currentUser]
@@ -123,7 +119,6 @@ const Shop = () => {
             try {
                 setLoading(true);
 
-                // Fetch all three queries in parallel
                 const [allSnap, popularSnap, menSnap, womenSnap] = await Promise.all([
                     getDocs(query(collection(db, 'products'))),
                     getDocs(query(collection(db, 'popularPerfumes'), orderBy('rank'))),
@@ -133,7 +128,6 @@ const Shop = () => {
 
                 const allProducts = allSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-                // Resolve perfume refs in parallel (batched per section)
                 const resolveRefs = async (snapshot) => {
                     const refs = snapshot.docs
                         .map(d => d.data().perfumeRef)
@@ -165,7 +159,7 @@ const Shop = () => {
         };
 
         fetchProducts();
-    }, []); // no isAdmin dependency — fetching doesn't depend on admin status
+    }, []); 
 
     const next = useCallback((section) => {
         setIndices(prev => {
@@ -189,7 +183,6 @@ const Shop = () => {
         navigate('/product-details', { state: { product } });
     }, [navigate]);
 
-    // ── Admin actions ───────────────────────────────────────────────────────
 
     const addToSection = useCallback(async (section) => {
         if (!selectedProduct) return;
@@ -271,8 +264,6 @@ const Shop = () => {
             return next;
         });
     }, []);
-
-    // ── Render helpers ──────────────────────────────────────────────────────
 
     const renderAdminControls = (section) => {
         if (!isAdmin || !adminMode) return null;
@@ -361,7 +352,6 @@ const Shop = () => {
         );
     };
 
-    // ── Loading state ───────────────────────────────────────────────────────
 
     if (loading) {
         return (
@@ -378,8 +368,6 @@ const Shop = () => {
             </div>
         );
     }
-
-    // ── Full render ─────────────────────────────────────────────────────────
 
     return (
         <div className="shop">
