@@ -1,7 +1,12 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFemale, faMale, faHome, faShoppingBag, faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faHome } from '@fortawesome/free-solid-svg-icons/faHome';
+import { faMale } from '@fortawesome/free-solid-svg-icons/faMale';
+import { faFemale } from '@fortawesome/free-solid-svg-icons/faFemale';
+import { faShoppingBag } from '@fortawesome/free-solid-svg-icons/faShoppingBag';
+import { faBars } from '@fortawesome/free-solid-svg-icons/faBars';
+import { faTimes } from '@fortawesome/free-solid-svg-icons/faTimes';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';

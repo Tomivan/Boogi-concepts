@@ -30,6 +30,13 @@
   width: 100%;
   overflow: hidden;
 }
+.priority-carousel {
+  content-visibility: visible;
+  contain: none;
+}
+.priority-skeleton {
+  animation-duration: 1s; 
+}
 .carousel-arrow {
   background: #4b0082;
   border: 1px solid #ddd;
