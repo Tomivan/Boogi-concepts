@@ -31,7 +31,7 @@ const NON_CRITICAL_SRCSET = {
 
 const HERO_TEXT = {
   title: 'Discover the Essence of Elegance',
-  subtitle: 'Experience the exclusivity of boogi-rye\'s handcrafted fragrances with gold-standard luxury. Designed for those who leave an impression.'
+  subtitle: 'Experience the exclusivity of boogi-noire\'s handcrafted fragrances with gold-standard luxury. Designed for those who leave an impression.'
 };
 
 const MOBILE_HERO_TEXT = {
@@ -275,10 +275,10 @@ const HeroSection = () => {
                 className="hero-carousel__image loaded"
               />
             </picture>
+            <div className="hero-carousel__overlay"></div>
           </div>
         </div>
 
-        {/* Dots for visual reference (static) */}
         <div className="hero-carousel__controls">
           <div className="hero-carousel__dots" role="tablist">
             {slides.map((_, index) => (
@@ -293,7 +293,6 @@ const HeroSection = () => {
           </div>
         </div>
 
-        {/* Text content - part of LCP */}
         <div className="content">
           <h2 className="hero-title">{HERO_TEXT.title}</h2>
           <p className="hero-subtitle">{HERO_TEXT.subtitle}</p>
@@ -328,36 +327,39 @@ const HeroSection = () => {
               inert={!isActive ? "true" : undefined}
             >
               {isActive && imageSet && !hasError ? (
-                <picture>
-                  <source 
-                    media="(max-width: 767px)" 
-                    srcSet={imageSet.mobile} 
-                  />
-                  <source 
-                    media="(max-width: 1024px)" 
-                    srcSet={imageSet.tablet} 
-                  />
-                  <img
-                    ref={isCritical ? lcpImageRef : null}
-                    src={imageSet.desktop}
-                    alt={slide.alt}
-                    fetchPriority={isCritical ? 'high' : 'auto'}
-                    loading={isCritical ? 'eager' : 'lazy'}
-                    decoding={isCritical ? 'sync' : 'async'}
-                    width="1920"
-                    height="1080"
-                    className="hero-carousel__image"
-                    onLoad={(e) => {
-                      e.target.classList.add('loaded');
-                      if (isCritical) {
-                        window.dispatchEvent(new CustomEvent('lcp-image-loaded'));
-                      }
-                    }}
-                    onError={() => {
-                      setImageLoadErrors(prev => ({ ...prev, [slide.id]: true }));
-                    }}
-                  />
-                </picture>
+                <>
+                  <picture>
+                    <source 
+                      media="(max-width: 767px)" 
+                      srcSet={imageSet.mobile} 
+                    />
+                    <source 
+                      media="(max-width: 1024px)" 
+                      srcSet={imageSet.tablet} 
+                    />
+                    <img
+                      ref={isCritical ? lcpImageRef : null}
+                      src={imageSet.desktop}
+                      alt={slide.alt}
+                      fetchPriority={isCritical ? 'high' : 'auto'}
+                      loading={isCritical ? 'eager' : 'lazy'}
+                      decoding={isCritical ? 'sync' : 'async'}
+                      width="1920"
+                      height="1080"
+                      className="hero-carousel__image"
+                      onLoad={(e) => {
+                        e.target.classList.add('loaded');
+                        if (isCritical) {
+                          window.dispatchEvent(new CustomEvent('lcp-image-loaded'));
+                        }
+                      }}
+                      onError={() => {
+                        setImageLoadErrors(prev => ({ ...prev, [slide.id]: true }));
+                      }}
+                    />
+                  </picture>
+                  <div className="hero-carousel__overlay"></div>
+                </>
               ) : isActive ? (
                 <div className="hero-carousel__placeholder" aria-label="Loading image..." />
               ) : null}

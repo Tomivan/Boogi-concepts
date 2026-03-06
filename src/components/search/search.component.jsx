@@ -27,7 +27,7 @@ const Search = ({ onSearch }) => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 {searchTerm && (
-                        <FaTimes onClick={clearSearch} className='fa-times'/>
+                        <FaTimes onClick={clearSearch} className='fa-times' size={20}/>
                 )}
             </div>
             <button type="submit" className='search-button'>Search</button>
