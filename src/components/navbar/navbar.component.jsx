@@ -1,12 +1,6 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome } from '@fortawesome/free-solid-svg-icons/faHome';
-import { faMale } from '@fortawesome/free-solid-svg-icons/faMale';
-import { faFemale } from '@fortawesome/free-solid-svg-icons/faFemale';
-import { faShoppingBag } from '@fortawesome/free-solid-svg-icons/faShoppingBag';
-import { faBars } from '@fortawesome/free-solid-svg-icons/faBars';
-import { faTimes } from '@fortawesome/free-solid-svg-icons/faTimes';
+import { FaHome, FaMale, FaFemale, FaShoppingBag, FaBars, FaTimes } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -138,10 +132,10 @@ const NavbarComponent = () => {
   }, [handleClickOutside, handleEscape]);
 
   const navItems = useMemo(() => [
-    { to: "/", icon: faHome, label: "Home" },
-    { to: "/men", icon: faMale, label: "Men" },
-    { to: "/women", icon: faFemale, label: "Women" },
-    { to: "/cart", icon: faShoppingBag, label: "Cart" }
+    { to: "/", icon: FaHome, label: "Home" },
+    { to: "/men", icon: FaMale, label: "Men" },
+    { to: "/women", icon: FaFemale, label: "Women" },
+    { to: "/cart", icon: FaShoppingBag, label: "Cart" }
   ], []);
 
   return (
@@ -164,7 +158,7 @@ const NavbarComponent = () => {
         aria-controls="basic-navbar-nav"
         aria-label="Toggle navigation"
       >
-        <FontAwesomeIcon icon={isMenuOpen ? faTimes : faBars} />
+        {isMenuOpen ? <FaTimes /> : <FaBars />}
       </button>
       
       <div 
@@ -173,10 +167,10 @@ const NavbarComponent = () => {
         ref={menuRef}
       >
         <ul className="navigation" role="menubar">
-          {navItems.map(({ to, icon, label }) => (
+          {navItems.map(({ to, icon: Icon, label }) => (
             <li key={to} role="none">
               <Link to={to} className='link' role="menuitem">
-                <FontAwesomeIcon icon={icon} className='navbar-icon' aria-hidden="true" />
+                <Icon className='navbar-icon' aria-hidden="true" />
                 {label}
                 {to === "/cart" && cartCount > 0 && (
                   <span className="cart-count" aria-label={`${cartCount} items in cart`}>

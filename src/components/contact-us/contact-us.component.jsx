@@ -1,5 +1,4 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
+import { FaWhatsapp } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import './contact-us.component.css';
 
@@ -8,7 +7,7 @@ const ContactUs = () => {
         <div className="contact-us">
             <p>Contact us:</p>
             <Link to="https://wa.me/2347068899614" target='_blank'>
-                <FontAwesomeIcon icon={faWhatsapp} className='whatsapp-icon' />
+                <FaWhatsapp className='whatsapp-icon' />
             </Link>
         </div>
     )

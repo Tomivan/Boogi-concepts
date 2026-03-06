@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { FaSearch, FaTimes } from 'react-icons/fa';
 import './search.component.css';
 
 const Search = ({ onSearch }) => {
@@ -19,7 +18,7 @@ const Search = ({ onSearch }) => {
     return (
         <form onSubmit={handleSearch} className='search'>
             <div className="flex search-container">
-                <FontAwesomeIcon icon={faSearch} className='search-icon' />
+                <FaSearch className='search-icon' />
                 <input 
                     type='search' 
                     placeholder='Search by brands and products' 
@@ -28,7 +27,7 @@ const Search = ({ onSearch }) => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 {searchTerm && (
-                        <FontAwesomeIcon icon={faTimes}  onClick={clearSearch} className='fa-times'/>
+                        <FaTimes onClick={clearSearch} className='fa-times'/>
                 )}
             </div>
             <button type="submit" className='search-button'>Search</button>
