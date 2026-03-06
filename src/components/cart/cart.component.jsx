@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../../store/cartStore'; 
 import { selectCartTotal } from '../../store/cartStore';
-import { FaCartPlus, FaTrash, FaMinus, FaPlus } from 'react-icons/fa';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCartPlus, faTrash, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
 import { 
   showSuccessAlert,
@@ -183,7 +184,7 @@ const Cart = () => {
 
       {cartItems.length === 0 ? (
         <div className="empty">
-          <FaCartPlus className='cart' />
+          <FontAwesomeIcon icon={faCartPlus} className='cart' />
           <p>Your cart is empty</p>
           <button className='start-shopping' onClick={goToHomepage}>
             Shop for Perfumes
@@ -227,7 +228,7 @@ const Cart = () => {
                     </>
                   ) : (
                     <>
-                      <FaTrash className='trash'/>
+                      <FontAwesomeIcon icon={faTrash} className='trash'/>
                       <p>Remove</p>
                     </>
                   )}
@@ -241,7 +242,7 @@ const Cart = () => {
                     {updatingQuantity === item.id ? (
                       <div className="counter-loader"></div>
                     ) : (
-                      <FaMinus />
+                      <FontAwesomeIcon icon={faMinus} />
                     )}
                   </button>
                   <p><strong>{item.quantity}</strong></p>
@@ -253,7 +254,7 @@ const Cart = () => {
                     {updatingQuantity === item.id ? (
                       <div className="counter-loader"></div>
                     ) : (
-                      <FaPlus />
+                      <FontAwesomeIcon icon={faPlus} />
                     )}
                   </button>
                 </div>

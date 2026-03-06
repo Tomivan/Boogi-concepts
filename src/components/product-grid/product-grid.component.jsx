@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../../store/cartStore';
 import { useAuth } from '../../context/AuthContext'; 
-import { FaPencilAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPencil, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { collection, getDocs, doc, updateDoc, addDoc, query, where } from 'firebase/firestore';
 import { db } from '../../firebase';
 import EditPerfumeForm from '../edit-component/edit-perfume.component';
@@ -446,7 +447,7 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
                     aria-label={`Edit ${product.Name}`}
                     disabled={filtering || actionLoading}
                   >
-                    <FaPencilAlt className='edit-icon' />
+                    <FontAwesomeIcon icon={faPencil} className='edit-icon' />
                   </button>
                 )}
               </div>
@@ -481,7 +482,7 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
                 disabled={page === 1 || filtering || actionLoading}
                 className="pagination-button"
               >
-                <FaChevronLeft /> Previous
+                <FontAwesomeIcon icon={faChevronLeft} /> Previous
               </button>
               
               <div className="page-numbers">
@@ -514,7 +515,7 @@ const ProductGrid = ({ genderFilter, brandFilter, searchTerm }) => {
                 disabled={page === totalPages || filtering || actionLoading}
                 className="pagination-button"
               >
-                Next <FaChevronRight />
+                Next <FontAwesomeIcon icon={faChevronRight} />
               </button>
             </div>
           )}

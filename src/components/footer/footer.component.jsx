@@ -1,4 +1,7 @@
-import { FaTwitter, FaInstagram, FaWhatsapp } from 'react-icons/fa';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTwitter } from '@fortawesome/free-brands-svg-icons';
+import { faInstagram } from '@fortawesome/free-brands-svg-icons';
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 import { Link } from 'react-router-dom';
 import './footer.component.css'; 
 
@@ -25,13 +28,13 @@ const Footer = () => {
                     <p>Email: okwuchidavida@gmail.com </p>
                     <div className="social-media">
                         <Link to="https://wa.me/07068899614" target='_blank'>
-                            <FaWhatsapp className='social-icon' />
+                            <FontAwesomeIcon icon={faWhatsapp} className='social-icon' />
                         </Link>
                         <Link to="https://www.instagram.com/boogi_noire/" target='_blank'>
-                            <FaInstagram className='social-icon' />
+                            <FontAwesomeIcon icon={faInstagram} className='social-icon' />
                         </Link>
                         <Link to="https://wa.me/07068899614" target='_blank'>
-                            <FaTwitter className='social-icon' />
+                            <FontAwesomeIcon icon={faTwitter} className='social-icon' />
                         </Link>
                     </div>
                 </div>
