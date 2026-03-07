@@ -31,7 +31,7 @@ const NON_CRITICAL_SRCSET = {
 
 const HERO_TEXT = {
   title: 'Discover the Essence of Elegance',
-  subtitle: 'Experience the exclusivity of boogi-noire\'s handcrafted fragrances with gold-standard luxury. Designed for those who leave an impression.'
+  subtitle: 'Experience the exclusivity of boogi-rye\'s handcrafted fragrances with gold-standard luxury. Designed for those who leave an impression.'
 };
 
 const MOBILE_HERO_TEXT = {
@@ -85,6 +85,15 @@ const HeroSection = () => {
   const lcpImageRef = useRef(null);
   const preloadQueueRef = useRef([]);
   const isMountedRef = useRef(true);
+
+  // Hide static image when component mounts
+  useEffect(() => {
+    // Hide the static image from index.html
+    const staticImage = document.getElementById('static-hero-image');
+    if (staticImage) {
+      staticImage.style.display = 'none';
+    }
+  }, []);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -255,52 +264,7 @@ const HeroSection = () => {
     isMobile ? MOBILE_HERO_TEXT : HERO_TEXT
   , [isMobile]);
 
-  if (!isClient) {
-    return (
-      <div className="hero-carousel" aria-label="Featured products carousel">
-        <div className="hero-carousel__track">
-          <div className="hero-carousel__slide active">
-            <picture>
-              <source media="(max-width: 767px)" srcSet={CriticalMobile} />
-              <source media="(max-width: 1024px)" srcSet={CriticalTablet} />
-              <img
-                ref={lcpImageRef}
-                src={CriticalDesktop}
-                alt="a white perfume in a white background"
-                fetchPriority="high"
-                loading="eager"
-                decoding="sync"
-                width="1920"
-                height="1080"
-                className="hero-carousel__image loaded"
-              />
-            </picture>
-            <div className="hero-carousel__overlay"></div>
-          </div>
-        </div>
-
-        <div className="hero-carousel__controls">
-          <div className="hero-carousel__dots" role="tablist">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                className={`hero-carousel__dot ${index === 0 ? 'active' : ''}`}
-                aria-label={`Go to slide ${index + 1}`}
-                aria-current={index === 0 ? 'true' : 'false'}
-                disabled={!isClient}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="content">
-          <h2 className="hero-title">{HERO_TEXT.title}</h2>
-          <p className="hero-subtitle">{HERO_TEXT.subtitle}</p>
-        </div>
-      </div>
-    );
-  }
-
+  // We don't need the server-side check anymore since image is in index.html
   return (
     <div 
       className="hero-carousel" 
@@ -317,6 +281,7 @@ const HeroSection = () => {
           const imageSet = loadedImages[slide.id];
           const hasError = imageLoadErrors[slide.id];
           
+          // Don't render non-critical slides that aren't loaded yet
           if (!isCritical && !imageSet && !isActive) return null;
           
           return (
