@@ -36,6 +36,7 @@
 }
 .priority-skeleton {
   animation-duration: 1s; 
+  height: 50vh;
 }
 .carousel-arrow {
   background: #4b0082;

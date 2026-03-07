@@ -29,6 +29,7 @@
   display: flex;
   list-style: none;
   gap: 30px;
+  margin-top: 0;
 }
 
 .navigation li {
@@ -184,6 +185,7 @@ button:focus {
   .topbar-toggle {
     display: block;
     order: 3;
+    margin-top: -2%;
   }
   
   .topbar-collapse {
@@ -233,6 +235,7 @@ button:focus {
   
   .user-welcome {
     font-size: 0.9rem;
+    padding-left: 1rem;
   }
   
   .dropdown-content {
