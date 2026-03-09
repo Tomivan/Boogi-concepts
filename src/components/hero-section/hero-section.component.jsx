@@ -85,24 +85,28 @@ const HeroSection = () => {
   const lcpImageRef = useRef(null);
   const preloadQueueRef = useRef([]);
   const isMountedRef = useRef(true);
+  const [hasPainted, setHasPainted] = useState(false);
 
-  // Hide static image when component mounts
   useEffect(() => {
-    // Hide the static image from index.html
-    const staticImage = document.getElementById('static-hero-image');
-    if (staticImage) {
-      staticImage.style.display = 'none';
-    }
+    requestAnimationFrame(() => {
+      const staticImage = document.getElementById('static-hero-image');
+      if (staticImage) {
+        staticImage.style.display = 'none';
+      }
+      setHasPainted(true);
+    });
   }, []);
 
   useEffect(() => {
+    if (!hasPainted) return;
+    
     isMountedRef.current = true;
     setIsClient(true);
     
     return () => {
       isMountedRef.current = false;
     };
-  }, []);
+  }, [hasPainted]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -130,9 +134,8 @@ const HeroSection = () => {
     };
   }, []);
 
-  // Preload non-critical images after critical one loads
   useEffect(() => {
-    if (!isClient) return;
+    if (!hasPainted || !isClient) return;
 
     const preloadNextImages = async () => {
       const preloadIndices = [2, 3]; 
@@ -144,7 +147,6 @@ const HeroSection = () => {
         preloadQueueRef.current.push(slideId);
         
         try {
-          // Determine which images to load based on screen size
           const isMobileView = window.innerWidth <= 767;
           const isTabletView = window.innerWidth <= 1024 && window.innerWidth > 767;
           
@@ -152,10 +154,10 @@ const HeroSection = () => {
           
           if (isMobileView) {
             mobileImg = await NON_CRITICAL_SRCSET[slideId].mobile();
-            desktopImg = mobileImg; // Fallback
+            desktopImg = mobileImg;
           } else if (isTabletView) {
             tabletImg = await NON_CRITICAL_SRCSET[slideId].tablet();
-            desktopImg = tabletImg; // Fallback
+            desktopImg = tabletImg;
           } else {
             desktopImg = await NON_CRITICAL_SRCSET[slideId].desktop();
           }
@@ -181,13 +183,12 @@ const HeroSection = () => {
       }
     };
 
-    // Use requestIdleCallback for non-critical preloading
     if ('requestIdleCallback' in window) {
       requestIdleCallback(preloadNextImages, { timeout: 2000 });
     } else {
       setTimeout(preloadNextImages, 1000);
     }
-  }, [isClient, loadedImages]);
+  }, [hasPainted, isClient, loadedImages]);
 
   const goTo = useCallback(async (index) => {
     const slide = slides[index];
@@ -245,8 +246,9 @@ const HeroSection = () => {
     goTo((current + 1) % slides.length);
   }, [current, goTo]);
 
-  // Autoplay with cleanup
   useEffect(() => {
+    if (!hasPainted) return;
+    
     if (isAutoPlaying && isClient) {
       autoPlayRef.current = setInterval(next, 5000);
     }
@@ -255,7 +257,7 @@ const HeroSection = () => {
         clearInterval(autoPlayRef.current);
       }
     };
-  }, [isAutoPlaying, next, isClient]);
+  }, [isAutoPlaying, next, isClient, hasPainted]);
 
   const pauseAutoPlay = useCallback(() => setIsAutoPlaying(false), []);
   const resumeAutoPlay = useCallback(() => setIsAutoPlaying(true), []);
@@ -264,7 +266,6 @@ const HeroSection = () => {
     isMobile ? MOBILE_HERO_TEXT : HERO_TEXT
   , [isMobile]);
 
-  // We don't need the server-side check anymore since image is in index.html
   return (
     <div 
       className="hero-carousel" 
@@ -275,14 +276,36 @@ const HeroSection = () => {
       onTouchEnd={resumeAutoPlay}
     >
       <div className="hero-carousel__track">
-        {slides.map((slide, index) => {
-          const isActive = index === current;
-          const isCritical = slide.critical;
+        {/* CRITICAL: Always render first slide immediately */}
+        <div className={`hero-carousel__slide ${current === 0 ? 'active' : ''}`}>
+          <picture>
+            <source media="(max-width: 767px)" srcSet={CriticalMobile} />
+            <source media="(max-width: 1024px)" srcSet={CriticalTablet} />
+            <img
+              ref={lcpImageRef}
+              src={CriticalDesktop}
+              alt="a white perfume in a white background"
+              fetchPriority="high"
+              loading="eager"
+              decoding="sync"
+              width="1920"
+              height="1080"
+              className="hero-carousel__image loaded"
+              onLoad={() => {
+                window.dispatchEvent(new CustomEvent('lcp-image-loaded'));
+              }}
+            />
+          </picture>
+          <div className="hero-carousel__overlay"></div>
+        </div>
+
+        {hasPainted && slides.slice(1).map((slide, index) => {
+          const slideIndex = index + 1;
+          const isActive = slideIndex === current;
           const imageSet = loadedImages[slide.id];
           const hasError = imageLoadErrors[slide.id];
           
-          // Don't render non-critical slides that aren't loaded yet
-          if (!isCritical && !imageSet && !isActive) return null;
+          if (!imageSet && !isActive) return null;
           
           return (
             <div
@@ -294,30 +317,16 @@ const HeroSection = () => {
               {isActive && imageSet && !hasError ? (
                 <>
                   <picture>
-                    <source 
-                      media="(max-width: 767px)" 
-                      srcSet={imageSet.mobile} 
-                    />
-                    <source 
-                      media="(max-width: 1024px)" 
-                      srcSet={imageSet.tablet} 
-                    />
+                    <source media="(max-width: 767px)" srcSet={imageSet.mobile} />
+                    <source media="(max-width: 1024px)" srcSet={imageSet.tablet} />
                     <img
-                      ref={isCritical ? lcpImageRef : null}
                       src={imageSet.desktop}
                       alt={slide.alt}
-                      fetchPriority={isCritical ? 'high' : 'auto'}
-                      loading={isCritical ? 'eager' : 'lazy'}
-                      decoding={isCritical ? 'sync' : 'async'}
+                      loading="lazy"
+                      decoding="async"
                       width="1920"
                       height="1080"
                       className="hero-carousel__image"
-                      onLoad={(e) => {
-                        e.target.classList.add('loaded');
-                        if (isCritical) {
-                          window.dispatchEvent(new CustomEvent('lcp-image-loaded'));
-                        }
-                      }}
                       onError={() => {
                         setImageLoadErrors(prev => ({ ...prev, [slide.id]: true }));
                       }}
@@ -338,7 +347,6 @@ const HeroSection = () => {
           className="hero-carousel__btn hero-carousel__btn--prev" 
           onClick={prev} 
           aria-label="Previous slide"
-          aria-disabled={!loadedImages[slides[current]?.id]}
         >
           ‹
         </button>
@@ -346,7 +354,6 @@ const HeroSection = () => {
           className="hero-carousel__btn hero-carousel__btn--next" 
           onClick={next} 
           aria-label="Next slide"
-          aria-disabled={!loadedImages[slides[current]?.id]}
         >
           ›
         </button>
