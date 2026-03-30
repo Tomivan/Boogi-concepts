@@ -1,5 +1,6 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
+import Home from "./home-page";
 import Signup from "./signup";
 import ForgotPassword from "./forgot-password";
 import Login from "./login";
@@ -9,7 +10,6 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import { useAuth } from "../context/AuthContext";
 
 
-const Home = lazy(() => import("./home-page"));
 const Men = lazy(() => import("./men"));
 const Women = lazy(() => import("./women"));
 const ProductDetailsPage = lazy(() => import("./product-details"));
